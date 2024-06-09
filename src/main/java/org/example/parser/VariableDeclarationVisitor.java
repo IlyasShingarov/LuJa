@@ -7,11 +7,11 @@ import org.example.antlr.LuaParser;
 import org.example.antlr.LuaParserBaseVisitor;
 import org.example.bytecode.LuaBytecodeGenerator;
 import org.example.domain.Variable;
-import org.example.domain.expression.Expression;
-import org.example.domain.expression.FloatExpression;
-import org.example.domain.expression.IntegerExpression;
-import org.example.domain.expression.Value;
+import org.example.domain.expression.*;
 import org.example.domain.statement.VariableDeclaration;
+import org.example.symbol.Symbol;
+import org.example.symbol.SymbolTable;
+import org.objectweb.asm.Type;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -25,6 +25,7 @@ public class VariableDeclarationVisitor extends LuaParserBaseVisitor<VariableDec
 
     private final ExpressionVisitor expressionVisitor;
     private final LuaBytecodeGenerator bytecodeGenerator;
+    private final SymbolTable symbolTable;
 
     @Override
     public VariableDeclaration visitVardecl(LuaParser.VardeclContext ctx) {
@@ -40,6 +41,10 @@ public class VariableDeclarationVisitor extends LuaParserBaseVisitor<VariableDec
                     .map(exp -> exp.accept(expressionVisitor))
                     .toList();
             log.info("Values: {}", values);
+
+            for (int i = 0; i < varnames.size(); i++) {
+                createLocalVariable(varnames.get(i), values.get(i));
+            }
         } else {
             log.info("Encountered global variable declaration");
             List<String> varnames = ctx.varlist().var().stream()
@@ -58,8 +63,6 @@ public class VariableDeclarationVisitor extends LuaParserBaseVisitor<VariableDec
             }
         }
 
-
-
         log.info("Returning from variable declaration");
         return null;
     }
@@ -72,7 +75,49 @@ public class VariableDeclarationVisitor extends LuaParserBaseVisitor<VariableDec
             case FloatExpression floatExpression -> {
                 bytecodeGenerator.declareGlobalVariable(name, "F", floatExpression.value());
             }
+            case BooleanExpression booleanExpression -> {
+                bytecodeGenerator.declareGlobalVariable(name, "Z", booleanExpression.value());
+            }
+            case StringExpression stringExpression -> {
+                bytecodeGenerator.declareGlobalVariable(name, "Ljava/lang/String;", stringExpression.value());
+            }
             default -> throw new IllegalStateException("Unexpected value: " + value);
         }
+    }
+
+    private void createLocalVariable(String name, Expression value) {
+        switch (value) {
+            case IntegerExpression integerExpression -> {
+                int index = getLocalVariableIndex(name, Type.INT_TYPE);
+                bytecodeGenerator.declareLocalVariable(name, "I", integerExpression.value(), index);
+            }
+            case FloatExpression floatExpression -> {
+                int index = getLocalVariableIndex(name, Type.FLOAT_TYPE);
+                bytecodeGenerator.declareLocalVariable(name, "F", floatExpression.value(), index);
+            }
+            case BooleanExpression booleanExpression -> {
+                int index = getLocalVariableIndex(name, Type.BOOLEAN_TYPE);
+                bytecodeGenerator.declareLocalVariable(name, "Z", booleanExpression.value(), index);
+            }
+            case StringExpression stringExpression -> {
+                int index = getLocalVariableIndex(name, Type.getType(String.class));
+                bytecodeGenerator.declareLocalVariable(name, "Ljava/lang/String;", stringExpression.value(), index);
+            }
+            case VariableExpression variableExpression -> {
+                int index = getLocalVariableIndex(name, variableExpression.symbol().type());
+                Symbol variableSymbol = variableExpression.symbol();
+                bytecodeGenerator.moveLocalVariable(variableSymbol.index(), index, variableExpression.symbol().type().getDescriptor());
+            }
+            default -> throw new IllegalStateException("Unexpected value: " + value);
+        }
+    }
+
+    private int getLocalVariableIndex(String name, Type type) {
+        symbolTable.addLocalVariable(name, type,"LOCALVARIABLE");
+        Symbol symbol = symbolTable.getLocalVariable(name);
+        if (symbol == null) {
+            throw new RuntimeException("Undefined variable: " + name);
+        }
+        return symbol.index();
     }
 }

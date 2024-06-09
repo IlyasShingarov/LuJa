@@ -1,7 +1,12 @@
 package org.example.domain.expression;
 
 public enum BinaryOperation {
-    ADD("+"), SUBTRACT("-"), MULTIPLY("*"), DIVIDE("/");
+    ADD("+"),
+    SUBTRACT("-"),
+    MULTIPLY("*"),
+    DIVIDE("/"),
+    MODULO("%"),
+    DIVIDE_FLOOR("//");
 
     private final String symbol;
 

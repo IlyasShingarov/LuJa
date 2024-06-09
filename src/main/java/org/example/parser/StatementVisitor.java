@@ -6,8 +6,10 @@ import org.example.antlr.LuaParser;
 import org.example.antlr.LuaParserBaseVisitor;
 import org.example.bytecode.LuaBytecodeGenerator;
 import org.example.domain.expression.Expression;
+import org.example.domain.expression.VariableExpression;
 import org.example.domain.statement.Statement;
 import org.example.domain.statement.VariableDeclaration;
+import org.example.symbol.SymbolTable;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -20,6 +22,7 @@ public class StatementVisitor extends LuaParserBaseVisitor<Statement> {
     private final VariableDeclarationVisitor variableDeclarationVisitor;
     private final ExpressionVisitor expressionVisitor;
     private final LuaBytecodeGenerator bytecodeGenerator;
+    private final SymbolTable symbolTable;
 
     @Override
     public Statement visitStat(LuaParser.StatContext ctx) {
@@ -33,13 +36,16 @@ public class StatementVisitor extends LuaParserBaseVisitor<Statement> {
 
     @Override
     public Statement visitFunctioncall(LuaParser.FunctioncallContext ctx) {
+        log.info("Visiting function call");
+        if (ctx.NAME() != null && ctx.NAME(0).getText().equals("print")) {
+            log.info("Encountered print statement");
+            var arg = ctx.args().explist().exp(0);
+            Expression text = arg.accept(expressionVisitor);
+            if (text instanceof VariableExpression) {
+                int ind = ((VariableExpression) text).symbol().index();
+                bytecodeGenerator.generatePrint(ind);
+            }
+        }
         return null;
-//        log.info("Visiting function call");
-//        if (ctx.NAME() != null && ctx.NAME(0).getText().equals("print")) {
-//            log.info("Encountered print statement");
-//            var arg = ctx.args().explist().exp(0);
-//            bytecodeGenerator.generatePrint(arg.getText());
-//        }
-//        return null;
     }
 }
