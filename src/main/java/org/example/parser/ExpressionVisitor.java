@@ -14,6 +14,9 @@ import org.example.symbol.Symbol;
 import org.example.symbol.SymbolTable;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -48,35 +51,27 @@ public class ExpressionVisitor extends LuaParserBaseVisitor<Expression> {
 
     @Override
     public Expression visitPrefixexp(LuaParser.PrefixexpContext ctx) {
+        /*
+        prefixexp
+            : NAME ('[' exp ']' | '.' NAME)*
+            | functioncall ('[' exp ']' | '.' NAME)*
+            | '(' exp ')' ('[' exp ']' | '.' NAME)*
+         */
         if (ctx.NAME() != null && !ctx.NAME().isEmpty()) {
-            // Обработка переменной с возможным доступом к элементам массива или полям объекта
             log.info("Name detected: {}", ctx.NAME());
             String varName = ctx.NAME(0).getText();
             Symbol symbol = symbolTable.getLocalVariable(varName);
             if (symbol == null) {
                 throw new RuntimeException("Undefined variable: " + varName);
             }
-            VariableExpression variableExpression = new VariableExpression(symbol);
-
-//            // Обработка доступа к элементам массива или полям объекта
-//            for (int i = 0; i < ctx.getChildCount(); i++) {
-//                ParseTree child = ctx.getChild(i);
-//                if (child instanceof TerminalNode) {
-//                    String text = child.getText();
-//                    if (text.equals("[")) {
-//                        // Обработка доступа к элементу массива
-//                        Expression indexExpression = visit(ctx.getChild(i + 1));
-//                        variableExpression.addArrayAccess(indexExpression);
-//                        i++; // Пропустить выражение индекса и ']'
-//                    } else if (text.equals(".")) {
-//                        // Обработка доступа к полю объекта
-//                        String fieldName = ctx.getChild(i + 1).getText();
-//                        variableExpression.addFieldAccess(fieldName);
-//                        i++; // Пропустить имя поля
-//                    }
-//                }
-//            }
-            return variableExpression;
+            if (!ctx.OB().isEmpty() && !ctx.CB().isEmpty()) {
+                // Обработка массива
+                log.info("Array access detected: {}", ctx.getText());
+                Expression index = visit(ctx.exp(0));
+                return new ArrayAccessExpression(new VariableExpression(symbol), index);
+            } else {
+                return new VariableExpression(symbol);
+            }
         } else if (ctx.CP() != null) {
             // Обработка выражения в скобках
             log.info("Bracket expression detected: {}", ctx.getText());
@@ -126,36 +121,16 @@ public class ExpressionVisitor extends LuaParserBaseVisitor<Expression> {
     public Expression visitTableconstructor(LuaParser.TableconstructorContext ctx) {
         log.info("Visiting table constructor: {}", ctx.getText());
 
+        int tableSize = ctx.fieldlist() != null ? ctx.fieldlist().field().size() : 0;
+        List<Expression> elements = new ArrayList<>();
+        if (ctx.fieldlist() != null) {
+            for (LuaParser.FieldContext field : ctx.fieldlist().field()) {
+                elements.add(field.accept(this));
+            }
+        }
 
-        return super.visitTableconstructor(ctx);
+        return new ArrayTableExpression(elements, tableSize);
     }
-
-//    @Override
-//    public Expression visitFieldlist(LuaParser.FieldlistContext ctx) {
-//        log.info("Visiting field list: {}", ctx.getText());
-//        for (LuaParser.FieldContext fieldContext : ctx.field()) {
-//            log.info("Field: {}", fieldContext.getText());
-//            if (fieldContext.exp(0) != null && fieldContext.exp(1) != null) {
-//                // Обработка поля вида [exp] = exp
-//                Object key = visit(fieldContext.exp(0));
-//                Object value = visit(fieldContext.exp(1));
-//                log.info("Key: {}, Value: {}", key, value);
-////                bytecodeGenerator.initializeTable(tableIndex, key, value);
-//            } else if (fieldCtx.NAME() != null) {
-//                // Обработка поля вида NAME = exp
-//                String key = fieldCtx.NAME().getText();
-//                Object value = fieldCtx.exp(0).accept(expressionVisitor);
-//                bytecodeGenerator.initializeTable(tableIndex, key, value);
-//            } else if (fieldCtx.exp(0) != null) {
-//                // Обработка поля вида exp
-//                // В этом случае ключом будет текущий индекс массива
-//                Object key = currentArrayIndex++;
-//                Object value = fieldCtx.exp(0).accept(expressionVisitor);
-//                bytecodeGenerator.initializeTable(tableIndex, key, value);
-//            }
-//        }
-//        return super.visitFieldlist(ctx);
-//    }
 
     private Expression handleAddition(Expression left, Expression right) {
         if (left instanceof BinaryExpression binaryLeft) {

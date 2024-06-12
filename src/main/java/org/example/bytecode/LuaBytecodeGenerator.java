@@ -4,8 +4,7 @@ import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.example.domain.Condition;
 import org.example.domain.expression.*;
-import org.example.domain.expression.constant.BooleanExpression;
-import org.example.domain.expression.constant.ConstantExpression;
+import org.example.domain.expression.constant.*;
 import org.example.symbol.Symbol;
 import org.objectweb.asm.*;
 import org.springframework.stereotype.Component;
@@ -72,7 +71,7 @@ public class LuaBytecodeGenerator implements Opcodes {
             case "Z":
                 mv.visitVarInsn(ILOAD, index);
                 break;
-            case "Ljava/lang/String;":
+            case "Ljava/lang/String;", "Ljava/lang/Object;", "[Ljava/lang/Object;":
                 mv.visitVarInsn(ALOAD, index);
                 break;
             default:
@@ -102,6 +101,29 @@ public class LuaBytecodeGenerator implements Opcodes {
     public void moveLocalVariable(int fromIndex, int toIndex, String descriptor) {
         loadLocalVariable(fromIndex, descriptor);
         storeLocalVariable(toIndex, descriptor);
+    }
+
+    private void loadValueOntoStack(Expression value) {
+        if (value instanceof IntegerExpression) {
+            mv.visitTypeInsn(Opcodes.NEW, "java/lang/Integer");
+            mv.visitInsn(Opcodes.DUP);
+            mv.visitLdcInsn(((IntegerExpression) value).value());
+            mv.visitMethodInsn(Opcodes.INVOKESPECIAL, "java/lang/Integer", "<init>", "(I)V", false);
+        } else if (value instanceof FloatExpression) {
+            mv.visitTypeInsn(Opcodes.NEW, "java/lang/Float");
+            mv.visitInsn(Opcodes.DUP);
+            mv.visitLdcInsn(((FloatExpression) value).value());
+            mv.visitMethodInsn(Opcodes.INVOKESPECIAL, "java/lang/Float", "<init>", "(F)V", false);
+        } else if (value instanceof BooleanExpression) {
+            mv.visitTypeInsn(Opcodes.NEW, "java/lang/Boolean");
+            mv.visitInsn(Opcodes.DUP);
+            mv.visitLdcInsn(((BooleanExpression) value).value() ? Boolean.TRUE : Boolean.FALSE);
+            mv.visitMethodInsn(Opcodes.INVOKESPECIAL, "java/lang/Boolean", "<init>", "(Z)V", false);
+        } else if (value instanceof StringExpression) {
+            mv.visitLdcInsn(((StringExpression) value).value());
+        } else {
+            throw new IllegalStateException("Unsupported expression type: " + value.getClass().getName());
+        }
     }
 
     public void loadExpression(Expression exp) {
@@ -135,10 +157,8 @@ public class LuaBytecodeGenerator implements Opcodes {
             Label nextLabel = new Label();
 
             if (condition.condition() instanceof BinaryExpression binaryExpression) {
-//                mv.visitFieldInsn(Opcodes.GETSTATIC, "java/lang/System", "out", "Ljava/io/PrintStream;");
                 // Вычисление условия. На стеке остается значение либо 0, либо 1
                 generateComparison(binaryExpression.left(), binaryExpression.right(), binaryExpression.operation());
-//                mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/io/PrintStream", "println", "(I)V", false);
             }
 
             // Переход к следующему условию, если текущее ложно
@@ -369,25 +389,61 @@ public class LuaBytecodeGenerator implements Opcodes {
         mv.visitLabel(endLoop);
     }
 
-//    private void generateExpression(Expression expr) {
-//        if (expr instanceof ConstantExpression constExpr) {
-//            mv.visitLdcInsn(constExpr.value());
-//        } else if (expr instanceof VariableExpression varExpr) {
-//            Symbol symbol = varExpr.symbol();
-//            loadLocalVariable(symbol.index(), symbol.type().getDescriptor());
-//        } else if (expr instanceof BinaryExpression binaryExpr) {
-//            generateBinaryOperation(binaryExpr.left(), binaryExpr.right(), binaryExpr.operation().getOpcode(binaryExpr.left().getType()));
-//        }
-//        // Добавьте обработку других типов выражений по мере необходимости
-//    }
+    public void createTable(int size, int index) {
+        mv.visitLdcInsn(size);
+        mv.visitTypeInsn(ANEWARRAY, "java/lang/Object");
+        mv.visitVarInsn(ASTORE, index);
+    }
+
+    public void createTable(int size, int index, Type elementType) {
+        mv.visitLdcInsn(size);
+        switch (elementType.getSort()) {
+            case Type.INT -> mv.visitTypeInsn(ANEWARRAY, "java/lang/Integer");
+            case Type.FLOAT -> mv.visitTypeInsn(ANEWARRAY, "java/lang/Float");
+            case Type.BOOLEAN -> mv.visitTypeInsn(ANEWARRAY, "java/lang/Boolean");
+            case Type.OBJECT -> mv.visitTypeInsn(ANEWARRAY, "java/lang/Object");
+            default -> throw new IllegalArgumentException("Unsupported element type: " + elementType);
+        }
+        mv.visitVarInsn(ASTORE, index);
+    }
+
+    public void setTableValue(int tableIndex, int elementIndex, Expression value) {
+        mv.visitVarInsn(Opcodes.ALOAD, tableIndex); // Загрузка массива
+        mv.visitIntInsn(Opcodes.BIPUSH, elementIndex); // Загрузка индекса элемента
+        loadValueOntoStack(value); // Загрузка значения на стек
+        mv.visitInsn(Opcodes.AASTORE); // Сохранение значения в массиве
+    }
+
+    public void loadTableValue(int tableIndex, int elementIndex) {
+        mv.visitVarInsn(Opcodes.ALOAD, tableIndex); // Загрузка массива
+        mv.visitIntInsn(Opcodes.BIPUSH, elementIndex); // Загрузка индекса элемента
+        mv.visitInsn(Opcodes.AALOAD); // Загрузка значения из массива
+    }
+
+    public void getArrayElement(int arrayIndex, int elementIndex) {
+        mv.visitVarInsn(Opcodes.ALOAD, arrayIndex); // Загрузка массива на стек
+        mv.visitIntInsn(Opcodes.BIPUSH, elementIndex); // Загрузка индекса элемента на стек
+        mv.visitInsn(Opcodes.IALOAD); // Получение значения из массива
+    }
+
+    public void getIntArrayElement(int arrayIndex, int elementIndex) {
+        mv.visitVarInsn(Opcodes.ALOAD, arrayIndex); // Загрузка массива на стек
+        mv.visitIntInsn(Opcodes.BIPUSH, elementIndex); // Загрузка индекса элемента на стек
+        mv.visitInsn(Opcodes.AALOAD); // Получение значения (объекта Integer) из массива
+
+        // Анбоксинг объекта Integer в примитивный int
+        mv.visitTypeInsn(Opcodes.CHECKCAST, "java/lang/Integer");
+        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/Integer", "intValue", "()I", false);
+    }
 
     public void generatePrint(Symbol symbol) {
         mv.visitFieldInsn(Opcodes.GETSTATIC, "java/lang/System", "out", "Ljava/io/PrintStream;");
         switch (symbol.metatype()) {
             case "global" -> mv.visitFieldInsn(Opcodes.GETSTATIC, "GeneratedClass", symbol.name(), symbol.type().getDescriptor());
-            case "local" -> mv.visitVarInsn(Opcodes.ILOAD, symbol.index());
+            case "local", "counter" -> loadLocalVariable(symbol.index(), symbol.type().getDescriptor());
         }
-        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/io/PrintStream", "println", "(I)V", false);
+        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/io/PrintStream", "println",
+                "(%s)V".formatted(symbol.type().getDescriptor()), false);
     }
 
     public void generatePrint(Expression expression) {

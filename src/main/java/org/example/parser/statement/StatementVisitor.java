@@ -127,6 +127,7 @@ public class StatementVisitor extends LuaParserBaseVisitor<Statement> {
             var arg = ctx.args().explist().exp(0);
             Expression text = arg.accept(expressionVisitor);
             if (text instanceof VariableExpression var) {
+                log.info("Printing variable: {}", var.symbol());
                 bytecodeGenerator.generatePrint(var.symbol());
             } else {
                 bytecodeGenerator.generatePrint(text);

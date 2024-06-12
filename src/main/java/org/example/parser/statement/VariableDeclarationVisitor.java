@@ -7,10 +7,7 @@ import org.example.antlr.LuaParser;
 import org.example.antlr.LuaParserBaseVisitor;
 import org.example.bytecode.LuaBytecodeGenerator;
 import org.example.domain.expression.*;
-import org.example.domain.expression.constant.BooleanExpression;
-import org.example.domain.expression.constant.FloatExpression;
-import org.example.domain.expression.constant.IntegerExpression;
-import org.example.domain.expression.constant.StringExpression;
+import org.example.domain.expression.constant.*;
 import org.example.domain.statement.VariableDeclaration;
 import org.example.parser.ExpressionVisitor;
 import org.example.symbol.Symbol;
@@ -71,26 +68,43 @@ public class VariableDeclarationVisitor extends LuaParserBaseVisitor<VariableDec
 
     private void createLocalVariable(String name, Expression value) {
         switch (value) {
-            case IntegerExpression integerExpression -> {
-                int index = symbolTable.getLocalVariableIndex(name, Type.INT_TYPE);
-                bytecodeGenerator.declareLocalVariable(name, "I", integerExpression.value(), index);
-            }
-            case FloatExpression floatExpression -> {
-                int index = symbolTable.getLocalVariableIndex(name, Type.FLOAT_TYPE);
-                bytecodeGenerator.declareLocalVariable(name, "F", floatExpression.value(), index);
-            }
-            case BooleanExpression booleanExpression -> {
-                int index = symbolTable.getLocalVariableIndex(name, Type.BOOLEAN_TYPE);
-                bytecodeGenerator.declareLocalVariable(name, "Z", booleanExpression.value(), index);
-            }
-            case StringExpression stringExpression -> {
-                int index = symbolTable.getLocalVariableIndex(name, Type.getType(String.class));
-                bytecodeGenerator.declareLocalVariable(name, "Ljava/lang/String;", stringExpression.value(), index);
+            case ConstantExpression constantExpression -> {
+                int index = symbolTable.getLocalVariableIndex(name, constantExpression.getType());
+                bytecodeGenerator.declareLocalVariable(name, constantExpression.getType().getDescriptor(),
+                        constantExpression.value(), index);
             }
             case VariableExpression variableExpression -> {
                 int index = symbolTable.getLocalVariableIndex(name, variableExpression.symbol().type());
                 Symbol variableSymbol = variableExpression.symbol();
                 bytecodeGenerator.moveLocalVariable(variableSymbol.index(), index, variableExpression.symbol().type().getDescriptor());
+            }
+            case ArrayTableExpression arrayTableExpression -> {
+                log.info("Processing array table expression: {}", arrayTableExpression);
+                log.info("Type of array table expression: {}", arrayTableExpression.getType());
+
+                int index = symbolTable.getLocalVariableIndex(name, arrayTableExpression.getType());
+                bytecodeGenerator.createTable(arrayTableExpression.size(), index, arrayTableExpression.getElementType());
+                for (int elementIndex = 0; elementIndex < arrayTableExpression.size(); elementIndex++) {
+                    bytecodeGenerator.setTableValue(index, elementIndex, arrayTableExpression.elements().get(elementIndex));
+                }
+            }
+            case ArrayAccessExpression arrayAccessExpression -> {
+                VariableExpression arrayVar = arrayAccessExpression.array();
+                Expression indexExpression = arrayAccessExpression.index();
+                switch (indexExpression) {
+                    case IntegerExpression integerExpression -> {
+                        int index = symbolTable.getLocalVariableIndex(name, Type.INT_TYPE);
+                        bytecodeGenerator.getIntArrayElement(arrayVar.symbol().index(), integerExpression.value());
+                        bytecodeGenerator.storeLocalVariable(index, Type.INT_TYPE.getDescriptor());
+                    }
+                    case VariableExpression variableExpression -> {
+                        int index = symbolTable.getLocalVariableIndex(name, variableExpression.symbol().type());
+
+                        bytecodeGenerator.getIntArrayElement(arrayVar.symbol().index(), variableExpression.symbol().index());
+                        bytecodeGenerator.storeLocalVariable(index, variableExpression.symbol().type().getDescriptor());
+                    }
+                    default -> throw new IllegalStateException("Unexpected value: " + indexExpression);
+                }
             }
             case BinaryExpression binaryExpression -> {
                 log.info("Processing binary expression: {}", binaryExpression);

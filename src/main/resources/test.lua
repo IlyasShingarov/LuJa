@@ -1,11 +1,8 @@
 
-local a = 10;
+local a = {3, 4, 8, 5, 7, 2};
 
-while a > 0 do
-    if a > 5 then
-        print(0);
-    else
-        print(1);
-    end
-    a = a - 1;
+for i=0,5 do
+    print(a[i]);
 end
+
+-- print(b);
