@@ -25,10 +25,6 @@ import java.util.List;
 public class StatementVisitor extends LuaParserBaseVisitor<Statement> {
 
     private final VariableDeclarationVisitor variableDeclarationVisitor;
-    private final ForLoopVisitor forLoopVisitor;
-    private final WhileLoopVisitor whileLoopVisitor;
-    private final IfStatementVisitor ifStatementVisitor;
-
     private final ExpressionVisitor expressionVisitor;
 
     private final LuaBytecodeGenerator bytecodeGenerator;
