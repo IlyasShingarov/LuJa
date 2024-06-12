@@ -1,19 +1,11 @@
 
+local a = 10;
 
--- a, b = 1, 2
-
-e = 10
-
-local a = 12
-
-local b = 5
-
-
-local c = a
-
-local d = b
-
-print(d);
-print(c);
-print(b);
-print(a);
+while a > 0 do
+    if a > 5 then
+        print(0);
+    else
+        print(1);
+    end
+    a = a - 1;
+end

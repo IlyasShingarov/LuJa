@@ -43,15 +43,31 @@ stat
     | 'break'
 //    | 'goto' NAME
 //    | 'do' block 'end'
-    | 'while' exp 'do' block 'end'
+    | whileloop
+//    | 'while' exp 'do' block 'end'
 //    | 'repeat' block 'until' exp
-    | 'if' exp 'then' block ('elseif' exp 'then' block)* ('else' block)? 'end'
-    | 'for' NAME '=' exp ',' exp (',' exp)? 'do' block 'end'
-    | 'for' namelist 'in' explist 'do' block 'end'
+    | ifstat
+//    | 'if' exp 'then' block ('elseif' exp 'then' block)* ('else' block)? 'end'
+    | forloop
+//    | 'for' NAME '=' exp ',' exp (',' exp)? 'do' block 'end'
+//    | 'for' namelist 'in' explist 'do' block 'end'
     | funcdecl
 //    | 'function' funcname funcbody
 //    | 'local' 'function' NAME funcbody
 //    | 'local' attnamelist ('=' explist)?
+    ;
+
+ifstat
+    : 'if' exp 'then' block ('elseif' exp 'then' block)* ('else' block)? 'end'
+    ;
+
+whileloop
+    : 'while' exp 'do' block 'end'
+    ;
+
+forloop
+    : 'for' NAME '=' exp ',' exp (',' exp)? 'do' block 'end'
+    | 'for' namelist 'in' explist 'do' block 'end'
     ;
 
 vardecl

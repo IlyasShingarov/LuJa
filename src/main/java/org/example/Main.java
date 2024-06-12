@@ -9,6 +9,7 @@ import org.example.antlr.LuaLexer;
 import org.example.antlr.LuaParser;
 import org.example.bytecode.LuaBytecodeGenerator;
 import org.example.parser.ChunkVisitor;
+import org.example.parser.GlobalVariableDeclarationVisitor;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -23,6 +24,8 @@ public class Main implements CommandLineRunner {
     public static void main(String[] args) {
         SpringApplication.run(Main.class, args);
     }
+
+    private final GlobalVariableDeclarationVisitor globalVariableDeclarationVisitor;
 
     private final ChunkVisitor chunkVisitor;
     private final LuaBytecodeGenerator bytecodeGenerator;
@@ -45,6 +48,8 @@ public class Main implements CommandLineRunner {
         log.info("Got starting token: 'start_'");
 
         bytecodeGenerator.generateMainMethod();
+
+        tree.accept(globalVariableDeclarationVisitor);
 
         tree.accept(chunkVisitor);
 

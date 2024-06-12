@@ -8,8 +8,8 @@ import org.antlr.v4.runtime.tree.ParseTreeVisitor;
  * This interface defines a complete generic visitor for a parse tree produced
  * by {@link LuaParser}.
  *
- * @param <T> The return metatype of the visit operation. Use {@link Void} for
- * operations with no return metatype.
+ * @param <T> The return type of the visit operation. Use {@link Void} for
+ * operations with no return type.
  */
 public interface LuaParserVisitor<T> extends ParseTreeVisitor<T> {
 	/**
@@ -36,6 +36,24 @@ public interface LuaParserVisitor<T> extends ParseTreeVisitor<T> {
 	 * @return the visitor result
 	 */
 	T visitStat(LuaParser.StatContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link LuaParser#ifstat}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitIfstat(LuaParser.IfstatContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link LuaParser#whileloop}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitWhileloop(LuaParser.WhileloopContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link LuaParser#forloop}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitForloop(LuaParser.ForloopContext ctx);
 	/**
 	 * Visit a parse tree produced by {@link LuaParser#vardecl}.
 	 * @param ctx the parse tree

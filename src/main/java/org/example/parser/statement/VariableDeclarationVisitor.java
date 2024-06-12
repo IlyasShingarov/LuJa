@@ -1,4 +1,4 @@
-package org.example.parser;
+package org.example.parser.statement;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -6,17 +6,19 @@ import org.antlr.v4.runtime.tree.ParseTree;
 import org.example.antlr.LuaParser;
 import org.example.antlr.LuaParserBaseVisitor;
 import org.example.bytecode.LuaBytecodeGenerator;
-import org.example.domain.Variable;
 import org.example.domain.expression.*;
+import org.example.domain.expression.constant.BooleanExpression;
+import org.example.domain.expression.constant.FloatExpression;
+import org.example.domain.expression.constant.IntegerExpression;
+import org.example.domain.expression.constant.StringExpression;
 import org.example.domain.statement.VariableDeclaration;
+import org.example.parser.ExpressionVisitor;
 import org.example.symbol.Symbol;
 import org.example.symbol.SymbolTable;
 import org.objectweb.asm.Type;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 @Slf4j
 @Component
@@ -45,8 +47,11 @@ public class VariableDeclarationVisitor extends LuaParserBaseVisitor<VariableDec
             for (int i = 0; i < varnames.size(); i++) {
                 createLocalVariable(varnames.get(i), values.get(i));
             }
+
+            log.info("Returning from variable declaration");
+            return new VariableDeclaration(varnames, values);
         } else {
-            log.info("Encountered global variable declaration");
+            log.info("Encountered variable context: {}", ctx.getText());
             List<String> varnames = ctx.varlist().var().stream()
                     .map(var -> var.NAME().getText())
                     .toList();
@@ -55,69 +60,65 @@ public class VariableDeclarationVisitor extends LuaParserBaseVisitor<VariableDec
             List<Expression> values = ctx.explist().exp().stream()
                     .map(exp -> exp.accept(expressionVisitor))
                     .toList();
-
             log.info("Values: {}", values);
 
             for (int i = 0; i < varnames.size(); i++) {
-                createGlobalVariable(varnames.get(i), values.get(i));
+                createLocalVariable(varnames.get(i), values.get(i));
             }
         }
-
-        log.info("Returning from variable declaration");
         return null;
-    }
-
-    private void createGlobalVariable(String name, Expression value) {
-        switch (value) {
-            case IntegerExpression integerExpression -> {
-                bytecodeGenerator.declareGlobalVariable(name, "I", integerExpression.value());
-            }
-            case FloatExpression floatExpression -> {
-                bytecodeGenerator.declareGlobalVariable(name, "F", floatExpression.value());
-            }
-            case BooleanExpression booleanExpression -> {
-                bytecodeGenerator.declareGlobalVariable(name, "Z", booleanExpression.value());
-            }
-            case StringExpression stringExpression -> {
-                bytecodeGenerator.declareGlobalVariable(name, "Ljava/lang/String;", stringExpression.value());
-            }
-            default -> throw new IllegalStateException("Unexpected value: " + value);
-        }
     }
 
     private void createLocalVariable(String name, Expression value) {
         switch (value) {
             case IntegerExpression integerExpression -> {
-                int index = getLocalVariableIndex(name, Type.INT_TYPE);
+                int index = symbolTable.getLocalVariableIndex(name, Type.INT_TYPE);
                 bytecodeGenerator.declareLocalVariable(name, "I", integerExpression.value(), index);
             }
             case FloatExpression floatExpression -> {
-                int index = getLocalVariableIndex(name, Type.FLOAT_TYPE);
+                int index = symbolTable.getLocalVariableIndex(name, Type.FLOAT_TYPE);
                 bytecodeGenerator.declareLocalVariable(name, "F", floatExpression.value(), index);
             }
             case BooleanExpression booleanExpression -> {
-                int index = getLocalVariableIndex(name, Type.BOOLEAN_TYPE);
+                int index = symbolTable.getLocalVariableIndex(name, Type.BOOLEAN_TYPE);
                 bytecodeGenerator.declareLocalVariable(name, "Z", booleanExpression.value(), index);
             }
             case StringExpression stringExpression -> {
-                int index = getLocalVariableIndex(name, Type.getType(String.class));
+                int index = symbolTable.getLocalVariableIndex(name, Type.getType(String.class));
                 bytecodeGenerator.declareLocalVariable(name, "Ljava/lang/String;", stringExpression.value(), index);
             }
             case VariableExpression variableExpression -> {
-                int index = getLocalVariableIndex(name, variableExpression.symbol().type());
+                int index = symbolTable.getLocalVariableIndex(name, variableExpression.symbol().type());
                 Symbol variableSymbol = variableExpression.symbol();
                 bytecodeGenerator.moveLocalVariable(variableSymbol.index(), index, variableExpression.symbol().type().getDescriptor());
             }
+            case BinaryExpression binaryExpression -> {
+                log.info("Processing binary expression: {}", binaryExpression);
+                BinaryOperation binaryOperation = binaryExpression.operation();
+                switch (binaryOperation) {
+                    case ADD, SUBTRACT, MULTIPLY, DIVIDE, MODULO, DIVIDE_FLOOR -> {
+                        Type type = binaryExpression.left().getType();
+                        int index = symbolTable.getLocalVariableIndex(name, type);
+                        bytecodeGenerator.generateBinaryOperation(
+                                binaryExpression.left(), binaryExpression.right(),
+                                binaryOperation.getOpcode(type)
+                        );
+
+                        bytecodeGenerator.storeLocalVariable(index, type.getDescriptor());
+                    }
+                    case EQUALS, NOT_EQUALS, LESS_THAN, LESS_THAN_OR_EQUALS, GREATER_THAN, GREATER_THAN_OR_EQUALS -> {
+                        Type type = binaryExpression.left().getType();
+                        int index = symbolTable.getLocalVariableIndex(name, Type.BOOLEAN_TYPE);
+                        bytecodeGenerator.generateComparison(
+                                binaryExpression.left(), binaryExpression.right(),
+                                binaryOperation
+                        );
+
+                        bytecodeGenerator.storeLocalVariable(index, Type.BOOLEAN_TYPE.getDescriptor());
+                    }
+                }
+            }
             default -> throw new IllegalStateException("Unexpected value: " + value);
         }
-    }
-
-    private int getLocalVariableIndex(String name, Type type) {
-        symbolTable.addLocalVariable(name, type,"LOCALVARIABLE");
-        Symbol symbol = symbolTable.getLocalVariable(name);
-        if (symbol == null) {
-            throw new RuntimeException("Undefined variable: " + name);
-        }
-        return symbol.index();
     }
 }

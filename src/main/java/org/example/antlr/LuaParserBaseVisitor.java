@@ -9,8 +9,8 @@ import org.antlr.v4.runtime.tree.AbstractParseTreeVisitor;
  * which can be extended to create a visitor which only needs to handle a subset
  * of the available methods.
  *
- * @param <T> The return metatype of the visit operation. Use {@link Void} for
- * operations with no return metatype.
+ * @param <T> The return type of the visit operation. Use {@link Void} for
+ * operations with no return type.
  */
 @SuppressWarnings("CheckReturnValue")
 public class LuaParserBaseVisitor<T> extends AbstractParseTreeVisitor<T> implements LuaParserVisitor<T> {
@@ -42,6 +42,27 @@ public class LuaParserBaseVisitor<T> extends AbstractParseTreeVisitor<T> impleme
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
 	@Override public T visitStat(LuaParser.StatContext ctx) { return visitChildren(ctx); }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation returns the result of calling
+	 * {@link #visitChildren} on {@code ctx}.</p>
+	 */
+	@Override public T visitIfstat(LuaParser.IfstatContext ctx) { return visitChildren(ctx); }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation returns the result of calling
+	 * {@link #visitChildren} on {@code ctx}.</p>
+	 */
+	@Override public T visitWhileloop(LuaParser.WhileloopContext ctx) { return visitChildren(ctx); }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation returns the result of calling
+	 * {@link #visitChildren} on {@code ctx}.</p>
+	 */
+	@Override public T visitForloop(LuaParser.ForloopContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *

@@ -50,6 +50,36 @@ public interface LuaParserListener extends ParseTreeListener {
 	 */
 	void exitStat(LuaParser.StatContext ctx);
 	/**
+	 * Enter a parse tree produced by {@link LuaParser#ifstat}.
+	 * @param ctx the parse tree
+	 */
+	void enterIfstat(LuaParser.IfstatContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link LuaParser#ifstat}.
+	 * @param ctx the parse tree
+	 */
+	void exitIfstat(LuaParser.IfstatContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link LuaParser#whileloop}.
+	 * @param ctx the parse tree
+	 */
+	void enterWhileloop(LuaParser.WhileloopContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link LuaParser#whileloop}.
+	 * @param ctx the parse tree
+	 */
+	void exitWhileloop(LuaParser.WhileloopContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link LuaParser#forloop}.
+	 * @param ctx the parse tree
+	 */
+	void enterForloop(LuaParser.ForloopContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link LuaParser#forloop}.
+	 * @param ctx the parse tree
+	 */
+	void exitForloop(LuaParser.ForloopContext ctx);
+	/**
 	 * Enter a parse tree produced by {@link LuaParser#vardecl}.
 	 * @param ctx the parse tree
 	 */

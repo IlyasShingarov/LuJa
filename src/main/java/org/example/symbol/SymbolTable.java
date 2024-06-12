@@ -1,7 +1,6 @@
 package org.example.symbol;
 
 import jakarta.annotation.PostConstruct;
-import org.example.domain.Variable;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.springframework.stereotype.Component;
@@ -56,5 +55,18 @@ public class SymbolTable {
             }
         }
         return false;
+    }
+
+    public int getLocalVariableIndex(String name, Type type) {
+        // Добавляет переменную в таблицу символов
+        // Получает индекс переменной
+        if (!containsLocalVariable(name)) {
+            addLocalVariable(name, type,"local");
+        }
+        Symbol symbol = getLocalVariable(name);
+        if (symbol == null) {
+            throw new RuntimeException("Undefined variable: " + name);
+        }
+        return symbol.index();
     }
 }

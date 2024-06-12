@@ -6,6 +6,7 @@ import org.example.antlr.LuaParser;
 import org.example.antlr.LuaParserBaseVisitor;
 import org.example.domain.Block;
 import org.example.domain.statement.Statement;
+import org.example.parser.statement.StatementVisitor;
 import org.example.symbol.SymbolTable;
 import org.springframework.stereotype.Component;
 

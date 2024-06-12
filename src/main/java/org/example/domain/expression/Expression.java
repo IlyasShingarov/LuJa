@@ -1,3 +1,7 @@
 package org.example.domain.expression;
 
-public interface Expression { }
+import org.objectweb.asm.Type;
+
+public interface Expression {
+    Type getType();
+}
