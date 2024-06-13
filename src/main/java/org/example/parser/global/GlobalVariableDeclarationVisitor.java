@@ -1,4 +1,4 @@
-package org.example.parser;
+package org.example.parser.global;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -9,6 +9,7 @@ import org.example.domain.expression.constant.BooleanExpression;
 import org.example.domain.expression.Expression;
 import org.example.domain.expression.constant.IntegerExpression;
 import org.example.domain.expression.constant.StringExpression;
+import org.example.parser.ExpressionVisitor;
 import org.example.symbol.SymbolTable;
 import org.objectweb.asm.Type;
 import org.springframework.stereotype.Component;
@@ -24,11 +25,9 @@ public class GlobalVariableDeclarationVisitor extends LuaParserBaseVisitor<Void>
     private final StaticVariableGenerator bytecodeGenerator;
     private final SymbolTable symbolTable;
 
-
-
     @Override
     public Void visitVardecl(LuaParser.VardeclContext ctx) {
-        if (ctx.LOCAL() == null) {
+        if (ctx.LOCAL() == null && ctx.varlist().var(0).OB() == null) {
             log.info("Encountered global variable declaration with names: {}", ctx.varlist().getText());
             List<String> varnames = ctx.varlist().var().stream()
                     .map(var -> var.NAME().getText())

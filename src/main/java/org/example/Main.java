@@ -9,7 +9,8 @@ import org.example.antlr.LuaLexer;
 import org.example.antlr.LuaParser;
 import org.example.bytecode.LuaBytecodeGenerator;
 import org.example.parser.ChunkVisitor;
-import org.example.parser.GlobalVariableDeclarationVisitor;
+import org.example.parser.global.GlobalFunctionDeclarationVisitor;
+import org.example.parser.global.GlobalVariableDeclarationVisitor;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -26,6 +27,7 @@ public class Main implements CommandLineRunner {
     }
 
     private final GlobalVariableDeclarationVisitor globalVariableDeclarationVisitor;
+    private final GlobalFunctionDeclarationVisitor globalFunctionDeclarationVisitor;
 
     private final ChunkVisitor chunkVisitor;
     private final LuaBytecodeGenerator bytecodeGenerator;
@@ -50,9 +52,9 @@ public class Main implements CommandLineRunner {
         bytecodeGenerator.generateMainMethod();
 
         tree.accept(globalVariableDeclarationVisitor);
+        tree.accept(globalFunctionDeclarationVisitor);
 
         tree.accept(chunkVisitor);
-
 
         bytecodeGenerator.generateExitMain();
         byte[] bytecode = bytecodeGenerator.getBytecode();

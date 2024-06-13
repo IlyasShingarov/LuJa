@@ -71,6 +71,14 @@ SLASH    : '/';
 DDD      : '...';
 SQEQ     : '~=';
 
+TYPE_I   : 'int';
+TYPE_F   : 'float';
+TYPE_S   : 'string';
+TYPE_B   : 'boolean';
+TYPE_T   : 'table';
+TYPE_V   : 'void';
+
+
 NAME: [a-zA-Z_][a-zA-Z_0-9]*;
 
 NORMALSTRING: '"' ( EscapeSequence | ~('\\' | '"'))* '"';

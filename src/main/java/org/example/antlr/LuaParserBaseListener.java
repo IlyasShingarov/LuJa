@@ -367,18 +367,6 @@ public class LuaParserBaseListener implements LuaParserListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterFunctiondef(LuaParser.FunctiondefContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void exitFunctiondef(LuaParser.FunctiondefContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
 	@Override public void enterFuncbody(LuaParser.FuncbodyContext ctx) { }
 	/**
 	 * {@inheritDoc}
@@ -470,6 +458,18 @@ public class LuaParserBaseListener implements LuaParserListener {
 	 * <p>The default implementation does nothing.</p>
 	 */
 	@Override public void exitString(LuaParser.StringContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterTypehint(LuaParser.TypehintContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitTypehint(LuaParser.TypehintContext ctx) { }
 
 	/**
 	 * {@inheritDoc}

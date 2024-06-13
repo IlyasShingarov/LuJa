@@ -1,14 +1,11 @@
 package org.example.symbol;
 
 import jakarta.annotation.PostConstruct;
-import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
-import java.util.HashMap;
-import java.util.Map;
 
 @Component
 public class SymbolTable {
@@ -34,13 +31,13 @@ public class SymbolTable {
     public void addLocalVariable(String name, Type type, String metatype) {
         Scope currentScope = scopes.peek();
         int index = currentScope.getNextLocalIndex();
-        Symbol symbol = new Symbol(name, index, metatype, type);
+        VariableSymbol symbol = new VariableSymbol(name, index, metatype, type);
         currentScope.addLocalVariable(name, symbol);
     }
 
-    public Symbol getLocalVariable(String name) {
+    public VariableSymbol getLocalVariable(String name) {
         for (Scope scope : scopes) {
-            Symbol symbol = scope.getLocalVariable(name);
+            VariableSymbol symbol = scope.getLocalVariable(name);
             if (symbol != null) {
                 return symbol;
             }
@@ -63,10 +60,21 @@ public class SymbolTable {
         if (!containsLocalVariable(name)) {
             addLocalVariable(name, type,"local");
         }
-        Symbol symbol = getLocalVariable(name);
+        VariableSymbol symbol = getLocalVariable(name);
         if (symbol == null) {
             throw new RuntimeException("Undefined variable: " + name);
         }
         return symbol.index();
+    }
+
+    public void addFunction(String name, Type type, String metatype) {
+        Scope currentScope = scopes.peek();
+        FunctionSymbol symbol = new FunctionSymbol(name, type, metatype);
+        currentScope.addFunction(name, symbol);
+    }
+
+    public void addFunction(FunctionSymbol symbol) {
+        Scope currentScope = scopes.peek();
+        currentScope.addFunction(symbol.name(), symbol);
     }
 }

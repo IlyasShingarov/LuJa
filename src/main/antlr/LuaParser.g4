@@ -105,7 +105,7 @@ varlist
     ;
 
 namelist
-    : NAME (',' NAME)*
+    : NAME (':' typehint)? (',' NAME (':' typehint)?)*
     ;
 
 explist
@@ -119,7 +119,7 @@ exp
     | number
     | string
     | '...'
-    | functiondef
+//    | functiondef
     | prefixexp
     | tableconstructor
 //    | ('not' | '#' | '-' | '~') exp
@@ -184,12 +184,12 @@ args
     | string
     ;
 
-functiondef
-    : 'function' funcbody
-    ;
+//functiondef
+//    : 'function' funcbody
+//    ;
 
 funcbody
-    : '(' parlist ')' block 'end'
+    : '(' parlist ')' (':' typehint)? block 'end'
     ;
 
 /* lparser.c says "is 'parlist' not empty?"
@@ -232,4 +232,13 @@ string
     : NORMALSTRING
     | CHARSTRING
     | LONGSTRING
+    ;
+
+typehint
+    : TYPE_I
+    | TYPE_F
+    | TYPE_S
+    | TYPE_B
+    | TYPE_V
+    | TYPE_T
     ;

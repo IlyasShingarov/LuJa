@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.example.antlr.LuaParser;
 import org.example.antlr.LuaParserBaseVisitor;
+import org.example.bytecode.ExpressionBuilder;
 import org.example.bytecode.LuaBytecodeGenerator;
 import org.example.domain.Condition;
 import org.example.domain.expression.Expression;
@@ -11,7 +12,7 @@ import org.example.domain.expression.VariableExpression;
 import org.example.domain.expression.constant.IntegerExpression;
 import org.example.domain.statement.Statement;
 import org.example.parser.ExpressionVisitor;
-import org.example.symbol.Symbol;
+import org.example.symbol.VariableSymbol;
 import org.example.symbol.SymbolTable;
 import org.objectweb.asm.Type;
 import org.springframework.stereotype.Component;
@@ -33,7 +34,7 @@ public class StatementVisitor extends LuaParserBaseVisitor<Statement> {
     @Override
     public Statement visitStat(LuaParser.StatContext ctx) {
         log.info("Visiting statement {} ", ctx.getText());
-        return super.visitChildren(ctx); // ????
+        return super.visitChildren(ctx);
     }
 
     @Override
@@ -54,7 +55,7 @@ public class StatementVisitor extends LuaParserBaseVisitor<Statement> {
         log.info("Limit: {}", limit);
 
         // Создать переменную для счетчика цикла
-        Symbol counterSymbol = null;
+        VariableSymbol counterSymbol = null;
         if (init instanceof IntegerExpression intInit) {
             symbolTable.addLocalVariable(counter, Type.INT_TYPE, "counter");
             counterSymbol = symbolTable.getLocalVariable(counter);
@@ -65,7 +66,7 @@ public class StatementVisitor extends LuaParserBaseVisitor<Statement> {
         }
 
         // Создать переменную для предела цикла
-        Symbol limitSymbol = null;
+        VariableSymbol limitSymbol = null;
         if (limit instanceof IntegerExpression intLimit) {
             symbolTable.addLocalVariable(counter + "_limit", Type.INT_TYPE, "limit");
             limitSymbol = symbolTable.getLocalVariable(counter + "_limit");
@@ -137,8 +138,24 @@ public class StatementVisitor extends LuaParserBaseVisitor<Statement> {
     }
 
     @Override
+    public Statement visitFuncdecl(LuaParser.FuncdeclContext ctx) {
+        return null;
+    }
+
+    @Override
+    public Statement visitRetstat(LuaParser.RetstatContext ctx) {
+        log.info("Visiting return statement");
+        Expression expression = ctx.explist().exp(0).accept(expressionVisitor);
+        log.info("Returning expression: {}", expression);
+        new ExpressionBuilder(bytecodeGenerator.getMethodVisitor())
+                .loadExpression(expression);
+        return null;
+    }
+
+    @Override
     public Statement visitBlock(LuaParser.BlockContext ctx) {
         ctx.stat().forEach(this::visit);
+        visit(ctx.retstat());
         return null;
     }
 }

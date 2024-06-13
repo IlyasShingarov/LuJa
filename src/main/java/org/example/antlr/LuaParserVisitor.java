@@ -187,12 +187,6 @@ public interface LuaParserVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitArgs(LuaParser.ArgsContext ctx);
 	/**
-	 * Visit a parse tree produced by {@link LuaParser#functiondef}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitFunctiondef(LuaParser.FunctiondefContext ctx);
-	/**
 	 * Visit a parse tree produced by {@link LuaParser#funcbody}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
@@ -240,4 +234,10 @@ public interface LuaParserVisitor<T> extends ParseTreeVisitor<T> {
 	 * @return the visitor result
 	 */
 	T visitString(LuaParser.StringContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link LuaParser#typehint}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitTypehint(LuaParser.TypehintContext ctx);
 }

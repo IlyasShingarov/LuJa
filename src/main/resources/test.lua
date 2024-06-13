@@ -1,8 +1,6 @@
+local a = {4, 2}
 
-local a = {3, 4, 8, 5, 7, 2};
+a[1] = 1000;
 
-for i=0,5 do
-    print(a[i]);
-end
-
--- print(b);
+local b = a[1];
+print(b)

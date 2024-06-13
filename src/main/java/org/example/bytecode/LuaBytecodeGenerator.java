@@ -5,11 +5,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.example.domain.Condition;
 import org.example.domain.expression.*;
 import org.example.domain.expression.constant.*;
-import org.example.symbol.Symbol;
+import org.example.symbol.VariableSymbol;
 import org.objectweb.asm.*;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @Slf4j
@@ -17,6 +16,7 @@ import java.util.List;
 public class LuaBytecodeGenerator implements Opcodes {
 
     private ClassWriter cw;
+    private MethodVisitor mainMethod;
     private MethodVisitor mv;
 
     @PostConstruct
@@ -27,6 +27,7 @@ public class LuaBytecodeGenerator implements Opcodes {
 
     public void generateMainMethod() {
         mv = cw.visitMethod(ACC_PUBLIC + ACC_STATIC, "main", "([Ljava/lang/String;)V", null, null);
+        mainMethod = mv;
         mv.visitCode();
     }
 
@@ -39,26 +40,31 @@ public class LuaBytecodeGenerator implements Opcodes {
     }
 
     public void declareLocalVariable(String name, String descriptor, Object value, int index) {
-        log.warn("Declaring local variable: {} with descriptor: {} and value: {}", name, descriptor, value);
-        switch (descriptor) {
-            case "I" -> {
-                mv.visitLdcInsn(value);
-                mv.visitVarInsn(ISTORE, index);
-            }
-            case "F" -> {
-                mv.visitLdcInsn(value);
-                mv.visitVarInsn(FSTORE, index);
-            }
-            case "Z" -> {
-                mv.visitVarInsn(ILOAD, (boolean) value ? 1 : 0);
-                mv.visitVarInsn(ISTORE, index);
-            }
-            case "Ljava/lang/String;" -> {
-                mv.visitLdcInsn(value);
-                mv.visitVarInsn(ASTORE, index);
+        if (value == null) {
+            mv.visitInsn(ACONST_NULL);
+            mv.visitVarInsn(ASTORE, index);
+        } else {
+            switch (descriptor) {
+                case "I" -> {
+                    mv.visitLdcInsn(value);
+                    mv.visitVarInsn(ISTORE, index);
+                }
+                case "F" -> {
+                    mv.visitLdcInsn(value);
+                    mv.visitVarInsn(FSTORE, index);
+                }
+                case "Z" -> {
+                    mv.visitVarInsn(ILOAD, (boolean) value ? 1 : 0);
+                    mv.visitVarInsn(ISTORE, index);
+                }
+                case "Ljava/lang/String;" -> {
+                    mv.visitLdcInsn(value);
+                    mv.visitVarInsn(ASTORE, index);
+                }
             }
         }
     }
+
 
     public void loadLocalVariable(int index, String descriptor) {
         switch (descriptor) {
@@ -77,73 +83,6 @@ public class LuaBytecodeGenerator implements Opcodes {
             default:
                 throw new IllegalStateException("Unexpected value: " + descriptor);
         }
-    }
-
-    public void storeLocalVariable(int index, String descriptor) {
-        switch (descriptor) {
-            case "I":
-                mv.visitVarInsn(ISTORE, index);
-                break;
-            case "F":
-                mv.visitVarInsn(FSTORE, index);
-                break;
-            case "Z":
-                mv.visitVarInsn(ISTORE, index);
-                break;
-            case "Ljava/lang/String;":
-                mv.visitVarInsn(ASTORE, index);
-                break;
-            default:
-                throw new IllegalStateException("Unexpected value: " + descriptor);
-        }
-    }
-
-    public void moveLocalVariable(int fromIndex, int toIndex, String descriptor) {
-        loadLocalVariable(fromIndex, descriptor);
-        storeLocalVariable(toIndex, descriptor);
-    }
-
-    private void loadValueOntoStack(Expression value) {
-        if (value instanceof IntegerExpression) {
-            mv.visitTypeInsn(Opcodes.NEW, "java/lang/Integer");
-            mv.visitInsn(Opcodes.DUP);
-            mv.visitLdcInsn(((IntegerExpression) value).value());
-            mv.visitMethodInsn(Opcodes.INVOKESPECIAL, "java/lang/Integer", "<init>", "(I)V", false);
-        } else if (value instanceof FloatExpression) {
-            mv.visitTypeInsn(Opcodes.NEW, "java/lang/Float");
-            mv.visitInsn(Opcodes.DUP);
-            mv.visitLdcInsn(((FloatExpression) value).value());
-            mv.visitMethodInsn(Opcodes.INVOKESPECIAL, "java/lang/Float", "<init>", "(F)V", false);
-        } else if (value instanceof BooleanExpression) {
-            mv.visitTypeInsn(Opcodes.NEW, "java/lang/Boolean");
-            mv.visitInsn(Opcodes.DUP);
-            mv.visitLdcInsn(((BooleanExpression) value).value() ? Boolean.TRUE : Boolean.FALSE);
-            mv.visitMethodInsn(Opcodes.INVOKESPECIAL, "java/lang/Boolean", "<init>", "(Z)V", false);
-        } else if (value instanceof StringExpression) {
-            mv.visitLdcInsn(((StringExpression) value).value());
-        } else {
-            throw new IllegalStateException("Unsupported expression type: " + value.getClass().getName());
-        }
-    }
-
-    public void loadExpression(Expression exp) {
-        if (exp instanceof ConstantExpression constExpr) {
-            mv.visitLdcInsn(constExpr.value());
-        } else if (exp instanceof VariableExpression varExpr) {
-            Symbol symbol = varExpr.symbol();
-            if (symbol.metatype().equals("global")) {
-                mv.visitFieldInsn(GETSTATIC, "GeneratedClass", symbol.name(), symbol.type().getDescriptor());
-            } else {
-                mv.visitVarInsn(ILOAD, symbol.index());
-            }
-        } else if (exp instanceof BinaryExpression binExpr) {
-            generateBinaryOperation(binExpr.left(), binExpr.right(), binExpr.operation().getOpcode(binExpr.left().getType()));
-        }
-    }
-
-    public void generateAssignment(String variable, int value) {
-        mv.visitVarInsn(Opcodes.BIPUSH, value);
-        mv.visitVarInsn(Opcodes.ISTORE, 1);
     }
 
 
@@ -183,34 +122,6 @@ public class LuaBytecodeGenerator implements Opcodes {
         mv.visitLabel(endLabel);
     }
 
-
-    public void generateBinaryOperation(Expression left, Expression right, int opcode) {
-        // Загрузка левого операнда
-        // Если левый операнд - переменная, то загружаем ее значение
-        // Если левый операнд - константа, то загружаем ее значение
-        // Загрузка правого операнда
-        // Если правый операнд - переменная, то загружаем ее значение
-        // Если правый операнд - константа, то загружаем ее значение
-        // Выполняем операцию (Результат остается на стеке)
-
-        if (left instanceof BinaryExpression leftBinary) {
-            generateBinaryOperation(
-                    leftBinary.left(), leftBinary.right(),
-                    leftBinary.operation().getOpcode(leftBinary.left().getType()));
-        } else {
-            loadOperand(left);
-        }
-
-        if (right instanceof BinaryExpression rightBinary) {
-            generateBinaryOperation(
-                    rightBinary.left(), rightBinary.right(),
-                    rightBinary.operation().getOpcode(rightBinary.left().getType()));
-        } else {
-            loadOperand(right);
-        }
-
-        mv.visitInsn(opcode);
-    }
 
     private void loadOperand(Expression expression) {
         if (expression instanceof VariableExpression var) {
@@ -304,22 +215,7 @@ public class LuaBytecodeGenerator implements Opcodes {
         mv.visitLabel(endLabel);
     }
 
-//    private void generateComparison(Expression left, Expression right, BinaryOperation operation, Label nextLabel) {
-//        generateExpression(left);
-//        generateExpression(right);
-//
-//        switch (operation) {
-//            case EQUALS -> mv.visitJumpInsn(Opcodes.IF_ICMPEQ, nextLabel);
-//            case NOT_EQUALS -> mv.visitJumpInsn(Opcodes.IF_ICMPNE, nextLabel);
-//            case LESS_THAN -> mv.visitJumpInsn(Opcodes.IF_ICMPLT, nextLabel);
-//            case LESS_THAN_OR_EQUALS -> mv.visitJumpInsn(Opcodes.IF_ICMPLE, nextLabel);
-//            case GREATER_THAN -> mv.visitJumpInsn(Opcodes.IF_ICMPGT, nextLabel);
-//            case GREATER_THAN_OR_EQUALS -> mv.visitJumpInsn(Opcodes.IF_ICMPGE, nextLabel);
-//            default -> throw new IllegalArgumentException("Unknown comparison operation: " + operation);
-//        }
-//    }
-
-    public void generateForLoop(Symbol init, Symbol limit, Runnable bodyGenerator) {
+    public void generateForLoop(VariableSymbol init, VariableSymbol limit, Runnable bodyGenerator) {
         // Метка для начала цикла (условие)
         Label startLoop = new Label();
         // Метка для конца цикла
@@ -371,7 +267,7 @@ public class LuaBytecodeGenerator implements Opcodes {
             mv.visitLdcInsn(booleanExpr.value());
             mv.visitJumpInsn(Opcodes.IFEQ, endLoop);
         } else if (condition instanceof VariableExpression varExpr) {
-            Symbol symbol = varExpr.symbol();
+            VariableSymbol symbol = varExpr.symbol();
             mv.visitVarInsn(Opcodes.ILOAD, symbol.index());
             mv.visitJumpInsn(Opcodes.IFEQ, endLoop);
         } else if (condition instanceof BinaryExpression binaryExpr) {
@@ -389,58 +285,12 @@ public class LuaBytecodeGenerator implements Opcodes {
         mv.visitLabel(endLoop);
     }
 
-    public void createTable(int size, int index) {
-        mv.visitLdcInsn(size);
-        mv.visitTypeInsn(ANEWARRAY, "java/lang/Object");
-        mv.visitVarInsn(ASTORE, index);
-    }
 
-    public void createTable(int size, int index, Type elementType) {
-        mv.visitLdcInsn(size);
-        switch (elementType.getSort()) {
-            case Type.INT -> mv.visitTypeInsn(ANEWARRAY, "java/lang/Integer");
-            case Type.FLOAT -> mv.visitTypeInsn(ANEWARRAY, "java/lang/Float");
-            case Type.BOOLEAN -> mv.visitTypeInsn(ANEWARRAY, "java/lang/Boolean");
-            case Type.OBJECT -> mv.visitTypeInsn(ANEWARRAY, "java/lang/Object");
-            default -> throw new IllegalArgumentException("Unsupported element type: " + elementType);
-        }
-        mv.visitVarInsn(ASTORE, index);
-    }
-
-    public void setTableValue(int tableIndex, int elementIndex, Expression value) {
-        mv.visitVarInsn(Opcodes.ALOAD, tableIndex); // Загрузка массива
-        mv.visitIntInsn(Opcodes.BIPUSH, elementIndex); // Загрузка индекса элемента
-        loadValueOntoStack(value); // Загрузка значения на стек
-        mv.visitInsn(Opcodes.AASTORE); // Сохранение значения в массиве
-    }
-
-    public void loadTableValue(int tableIndex, int elementIndex) {
-        mv.visitVarInsn(Opcodes.ALOAD, tableIndex); // Загрузка массива
-        mv.visitIntInsn(Opcodes.BIPUSH, elementIndex); // Загрузка индекса элемента
-        mv.visitInsn(Opcodes.AALOAD); // Загрузка значения из массива
-    }
-
-    public void getArrayElement(int arrayIndex, int elementIndex) {
-        mv.visitVarInsn(Opcodes.ALOAD, arrayIndex); // Загрузка массива на стек
-        mv.visitIntInsn(Opcodes.BIPUSH, elementIndex); // Загрузка индекса элемента на стек
-        mv.visitInsn(Opcodes.IALOAD); // Получение значения из массива
-    }
-
-    public void getIntArrayElement(int arrayIndex, int elementIndex) {
-        mv.visitVarInsn(Opcodes.ALOAD, arrayIndex); // Загрузка массива на стек
-        mv.visitIntInsn(Opcodes.BIPUSH, elementIndex); // Загрузка индекса элемента на стек
-        mv.visitInsn(Opcodes.AALOAD); // Получение значения (объекта Integer) из массива
-
-        // Анбоксинг объекта Integer в примитивный int
-        mv.visitTypeInsn(Opcodes.CHECKCAST, "java/lang/Integer");
-        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/Integer", "intValue", "()I", false);
-    }
-
-    public void generatePrint(Symbol symbol) {
+    public void generatePrint(VariableSymbol symbol) {
         mv.visitFieldInsn(Opcodes.GETSTATIC, "java/lang/System", "out", "Ljava/io/PrintStream;");
         switch (symbol.metatype()) {
             case "global" -> mv.visitFieldInsn(Opcodes.GETSTATIC, "GeneratedClass", symbol.name(), symbol.type().getDescriptor());
-            case "local", "counter" -> loadLocalVariable(symbol.index(), symbol.type().getDescriptor());
+            case "local", "counter", "parameter" -> loadLocalVariable(symbol.index(), symbol.type().getDescriptor());
         }
         mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/io/PrintStream", "println",
                 "(%s)V".formatted(symbol.type().getDescriptor()), false);
@@ -450,6 +300,19 @@ public class LuaBytecodeGenerator implements Opcodes {
         mv.visitFieldInsn(Opcodes.GETSTATIC, "java/lang/System", "out", "Ljava/io/PrintStream;");
         loadOperand(expression);
         mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/io/PrintStream", "println", "(I)V", false);
+    }
+
+
+    public void setMethodVisitor(MethodVisitor mv) {
+        this.mv = mv;
+    }
+
+    public MethodVisitor getMethodVisitor() {
+        return mv;
+    }
+
+    public void resetMainMethod() {
+        mv = mainMethod;
     }
 
     public ClassWriter getClassWriter() {

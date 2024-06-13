@@ -10,7 +10,7 @@ import org.example.domain.expression.constant.BooleanExpression;
 import org.example.domain.expression.constant.FloatExpression;
 import org.example.domain.expression.constant.IntegerExpression;
 import org.example.domain.expression.constant.StringExpression;
-import org.example.symbol.Symbol;
+import org.example.symbol.VariableSymbol;
 import org.example.symbol.SymbolTable;
 import org.springframework.stereotype.Component;
 
@@ -60,7 +60,7 @@ public class ExpressionVisitor extends LuaParserBaseVisitor<Expression> {
         if (ctx.NAME() != null && !ctx.NAME().isEmpty()) {
             log.info("Name detected: {}", ctx.NAME());
             String varName = ctx.NAME(0).getText();
-            Symbol symbol = symbolTable.getLocalVariable(varName);
+            VariableSymbol symbol = symbolTable.getLocalVariable(varName);
             if (symbol == null) {
                 throw new RuntimeException("Undefined variable: " + varName);
             }

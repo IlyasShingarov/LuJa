@@ -5,14 +5,15 @@ import java.util.Map;
 
 public class Scope {
 
-    private final Map<String, Symbol> localVariables = new HashMap<>();
+    private final Map<String, VariableSymbol> localVariables = new HashMap<>();
+    private final Map<String, FunctionSymbol> functions = new HashMap<>();
     private int nextLocalIndex = 0;
 
-    public void addLocalVariable(String name, Symbol symbol) {
+    public void addLocalVariable(String name, VariableSymbol symbol) {
         localVariables.put(name, symbol);
     }
 
-    public Symbol getLocalVariable(String name) {
+    public VariableSymbol getLocalVariable(String name) {
         return localVariables.get(name);
     }
 
@@ -20,4 +21,11 @@ public class Scope {
         return nextLocalIndex++;
     }
 
+    public void addFunction(String name, FunctionSymbol symbol) {
+        functions.put(name, symbol);
+    }
+
+    public FunctionSymbol getFunction(String name) {
+        return functions.get(name);
+    }
 }

@@ -300,16 +300,6 @@ public interface LuaParserListener extends ParseTreeListener {
 	 */
 	void exitArgs(LuaParser.ArgsContext ctx);
 	/**
-	 * Enter a parse tree produced by {@link LuaParser#functiondef}.
-	 * @param ctx the parse tree
-	 */
-	void enterFunctiondef(LuaParser.FunctiondefContext ctx);
-	/**
-	 * Exit a parse tree produced by {@link LuaParser#functiondef}.
-	 * @param ctx the parse tree
-	 */
-	void exitFunctiondef(LuaParser.FunctiondefContext ctx);
-	/**
 	 * Enter a parse tree produced by {@link LuaParser#funcbody}.
 	 * @param ctx the parse tree
 	 */
@@ -389,4 +379,14 @@ public interface LuaParserListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitString(LuaParser.StringContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link LuaParser#typehint}.
+	 * @param ctx the parse tree
+	 */
+	void enterTypehint(LuaParser.TypehintContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link LuaParser#typehint}.
+	 * @param ctx the parse tree
+	 */
+	void exitTypehint(LuaParser.TypehintContext ctx);
 }
