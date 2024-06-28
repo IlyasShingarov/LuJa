@@ -241,4 +241,5 @@ typehint
     | TYPE_B
     | TYPE_V
     | TYPE_T
+    | TYPE_A
     ;

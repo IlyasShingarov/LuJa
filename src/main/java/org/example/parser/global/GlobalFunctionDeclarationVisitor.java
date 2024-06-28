@@ -42,11 +42,14 @@ public class GlobalFunctionDeclarationVisitor extends LuaParserBaseVisitor<Void>
                 .map(this::convertToType)
                 .toList();
 
-        log.info("Function name: {}  Parameters: {}", functionName, parameters);
+        log.info("Function name: {}  Parameters: {} Parameter types: {}", functionName, parameters, parameterTypes);
 
         Type returnType = convertToType(ctx.funcbody().typehint());
-
-        FunctionSymbol functionSymbol = new FunctionSymbol(functionName, returnType, "global");
+        String descriptor = "(%s)%s".formatted(
+                String.join("", parameterTypes.stream().map(Type::getDescriptor).toList()),
+                returnType.getDescriptor()
+        );
+        FunctionSymbol functionSymbol = new FunctionSymbol(functionName, returnType, "global", descriptor);
         symbolTable.addFunction(functionSymbol);
 
         symbolTable.enterScope();
@@ -76,6 +79,7 @@ public class GlobalFunctionDeclarationVisitor extends LuaParserBaseVisitor<Void>
     }
 
     private Type convertToType(LuaParser.TypehintContext ctx) {
+        log.info("Converting type hint: {}", ctx.getText());
         if (ctx == null) {
             return Type.getType(Object.class);
         }
@@ -85,6 +89,7 @@ public class GlobalFunctionDeclarationVisitor extends LuaParserBaseVisitor<Void>
             case "string" -> Type.getType(String.class);
             case "boolean" -> Type.BOOLEAN_TYPE;
             case "void" -> Type.VOID_TYPE;
+            case "array" -> Type.getType(Object[].class);
             case "table" -> Type.getType(Object.class); // Пример для таблицы, нужно будет уточнить
             default -> throw new IllegalStateException("Unsupported type hint: " + ctx.getText());
         };

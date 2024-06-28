@@ -77,6 +77,7 @@ TYPE_S   : 'string';
 TYPE_B   : 'boolean';
 TYPE_T   : 'table';
 TYPE_V   : 'void';
+TYPE_A   : 'array';
 
 
 NAME: [a-zA-Z_][a-zA-Z_0-9]*;

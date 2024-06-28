@@ -22,7 +22,8 @@ public record ArrayTableExpression(
         }
 
         // Возвращаем тип массива на основе типа первого элемента
-        return Type.getType("[" + firstElementType.getDescriptor());
+        return Type.getType(firstElementType.getDescriptor());
+//        return Type.getType("[" + firstElementType.getDescriptor());
     }
 
     public Type getElementType() {

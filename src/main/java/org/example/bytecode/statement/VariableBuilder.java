@@ -2,6 +2,7 @@ package org.example.bytecode.statement;
 
 import lombok.RequiredArgsConstructor;
 import org.example.domain.expression.Expression;
+import org.example.domain.expression.TableExpression;
 import org.example.domain.expression.constant.BooleanExpression;
 import org.example.domain.expression.constant.FloatExpression;
 import org.example.domain.expression.constant.IntegerExpression;
@@ -39,6 +40,11 @@ public class VariableBuilder implements Opcodes {
         return this;
     }
 
+    public VariableBuilder withValue(Runnable value) {
+        value.run();
+        return this;
+    }
+
     public VariableBuilder moveFrom(int fromIndex, String descriptor) {
         loadLocalVariable(fromIndex, descriptor);
         storeLocalVariable(index, descriptor);
@@ -71,14 +77,20 @@ public class VariableBuilder implements Opcodes {
         return this;
     }
 
+    public VariableBuilder loadLocal(int index, String descriptor, boolean isArray) {
+        loadLocalVariable(index, "[Ljava/lang/Object;");
+        return this;
+    }
+
     public VariableBuilder storeLocal(int index, String descriptor) {
         storeLocalVariable(index, descriptor);
         return this;
     }
 
     public void build() {
-
-        loadConstantValue(descriptor, value);
+        if (value != null) {
+            loadConstantValue(descriptor, value);
+        }
         if (isLocalVariable) {
             storeLocalVariable(index, descriptor);
         }
@@ -105,6 +117,11 @@ public class VariableBuilder implements Opcodes {
                 mv.visitMethodInsn(Opcodes.INVOKESPECIAL, "java/lang/Boolean", "<init>", "(Z)V", false);
             }
             case StringExpression stringExpression -> mv.visitLdcInsn(stringExpression.value());
+            case TableExpression tableExpression -> {
+                mv.visitTypeInsn(NEW, "java/util/HashMap");
+                mv.visitInsn(DUP);
+                mv.visitMethodInsn(INVOKESPECIAL, "java/util/HashMap", "<init>", "()V", false);
+            }
             case null, default ->
                     throw new IllegalStateException("Unsupported expression type: " + value.getClass().getName());
         }
@@ -129,7 +146,7 @@ public class VariableBuilder implements Opcodes {
             case "Z":
                 mv.visitVarInsn(ILOAD, index);
                 break;
-            case "Ljava/lang/String;", "Ljava/lang/Object;", "[Ljava/lang/Object;":
+            case "Ljava/lang/String;", "Ljava/lang/Object;", "[Ljava/lang/Object;", "[I":
                 mv.visitVarInsn(ALOAD, index);
                 break;
             default:
@@ -148,7 +165,7 @@ public class VariableBuilder implements Opcodes {
             case "Z":
                 mv.visitVarInsn(ISTORE, index);
                 break;
-            case "Ljava/lang/String;":
+            case "Ljava/lang/String;", "Ljava/lang/Object;":
                 mv.visitVarInsn(ASTORE, index);
                 break;
             default:

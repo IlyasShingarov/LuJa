@@ -6,5 +6,6 @@ public record VariableSymbol(
         String name,
         int index,
         String metatype,
-        Type type
+        Type type,
+        boolean isArray
 ) implements Symbol { }

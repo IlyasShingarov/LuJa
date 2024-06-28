@@ -28,10 +28,17 @@ public class SymbolTable {
         scopes.pop();
     }
 
+    public void addLocalVariable(String name, Type type, String metatype, boolean isArray) {
+        Scope currentScope = scopes.peek();
+        int index = currentScope.getNextLocalIndex();
+        VariableSymbol symbol = new VariableSymbol(name, index, metatype, type, isArray);
+        currentScope.addLocalVariable(name, symbol);
+    }
+
     public void addLocalVariable(String name, Type type, String metatype) {
         Scope currentScope = scopes.peek();
         int index = currentScope.getNextLocalIndex();
-        VariableSymbol symbol = new VariableSymbol(name, index, metatype, type);
+        VariableSymbol symbol = new VariableSymbol(name, index, metatype, type, false);
         currentScope.addLocalVariable(name, symbol);
     }
 
@@ -54,11 +61,11 @@ public class SymbolTable {
         return false;
     }
 
-    public int getLocalVariableIndex(String name, Type type) {
+    public int getLocalVariableIndex(String name, Type type, boolean isArray) {
         // Добавляет переменную в таблицу символов
         // Получает индекс переменной
         if (!containsLocalVariable(name)) {
-            addLocalVariable(name, type,"local");
+            addLocalVariable(name, type,"local", isArray);
         }
         VariableSymbol symbol = getLocalVariable(name);
         if (symbol == null) {
@@ -67,14 +74,37 @@ public class SymbolTable {
         return symbol.index();
     }
 
-    public void addFunction(String name, Type type, String metatype) {
-        Scope currentScope = scopes.peek();
-        FunctionSymbol symbol = new FunctionSymbol(name, type, metatype);
-        currentScope.addFunction(name, symbol);
+    public int getLocalVariableIndex(String name, Type type) {
+        // Добавляет переменную в таблицу символов
+        // Получает индекс переменной
+        if (!containsLocalVariable(name)) {
+            addLocalVariable(name, type,"local", false);
+        }
+        VariableSymbol symbol = getLocalVariable(name);
+        if (symbol == null) {
+            throw new RuntimeException("Undefined variable: " + name);
+        }
+        return symbol.index();
     }
+
+//    public void addFunction(String name, Type type, String metatype) {
+//        Scope currentScope = scopes.peek();
+//        FunctionSymbol symbol = new FunctionSymbol(name, type, metatype);
+//        currentScope.addFunction(name, symbol);
+//    }
 
     public void addFunction(FunctionSymbol symbol) {
         Scope currentScope = scopes.peek();
         currentScope.addFunction(symbol.name(), symbol);
+    }
+
+    public FunctionSymbol getFunction(String name) {
+        for (Scope scope : scopes) {
+            FunctionSymbol symbol = scope.getFunction(name);
+            if (symbol != null) {
+                return symbol;
+            }
+        }
+        return null;
     }
 }

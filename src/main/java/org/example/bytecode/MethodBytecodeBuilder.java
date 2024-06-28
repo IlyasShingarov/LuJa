@@ -1,6 +1,11 @@
 package org.example.bytecode;
 
 import lombok.RequiredArgsConstructor;
+import org.example.domain.expression.Expression;
+import org.example.domain.expression.constant.BooleanExpression;
+import org.example.domain.expression.constant.FloatExpression;
+import org.example.domain.expression.constant.IntegerExpression;
+import org.example.domain.expression.constant.StringExpression;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
@@ -50,11 +55,7 @@ public class MethodBytecodeBuilder implements Opcodes {
         return this;
     }
 
-    public MethodBytecodeBuilder endMethod() {
-        bytecodeGenerator.setMethodVisitor(mv);
-
-        instructions.forEach(Runnable::run);
-
+    public MethodBytecodeBuilder addReturn(Expression value) {
         if (returnType.equals(Type.VOID_TYPE)) {
             mv.visitInsn(RETURN);
         } else if (returnType.equals(Type.INT_TYPE)) {
@@ -70,6 +71,29 @@ public class MethodBytecodeBuilder implements Opcodes {
         } else {
             throw new IllegalStateException("Unsupported return type: " + returnType);
         }
+        return this;
+    }
+
+    public MethodBytecodeBuilder endMethod() {
+        bytecodeGenerator.setMethodVisitor(mv);
+
+        instructions.forEach(Runnable::run);
+
+//        if (returnType.equals(Type.VOID_TYPE)) {
+//            mv.visitInsn(RETURN);
+//        } else if (returnType.equals(Type.INT_TYPE)) {
+//            mv.visitInsn(IRETURN);
+//        } else if (returnType.equals(Type.FLOAT_TYPE)) {
+//            mv.visitInsn(FRETURN);
+//        } else if (returnType.equals(Type.BOOLEAN_TYPE)) {
+//            mv.visitInsn(IRETURN);
+//        } else if (returnType.equals(Type.getType(Object.class))) {
+//            mv.visitInsn(ARETURN);
+//        } else if (returnType.equals(Type.getType(String.class))) {
+//            mv.visitInsn(ARETURN);
+//        } else {
+//            throw new IllegalStateException("Unsupported return type: " + returnType);
+//        }
 
         mv.visitMaxs(0, 0);
         mv.visitEnd();

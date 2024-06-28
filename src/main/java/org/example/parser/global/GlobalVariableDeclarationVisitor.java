@@ -9,7 +9,7 @@ import org.example.domain.expression.constant.BooleanExpression;
 import org.example.domain.expression.Expression;
 import org.example.domain.expression.constant.IntegerExpression;
 import org.example.domain.expression.constant.StringExpression;
-import org.example.parser.ExpressionVisitor;
+import org.example.parser.expression.ExpressionVisitor;
 import org.example.symbol.SymbolTable;
 import org.objectweb.asm.Type;
 import org.springframework.stereotype.Component;
@@ -27,7 +27,7 @@ public class GlobalVariableDeclarationVisitor extends LuaParserBaseVisitor<Void>
 
     @Override
     public Void visitVardecl(LuaParser.VardeclContext ctx) {
-        if (ctx.LOCAL() == null && ctx.varlist().var(0).OB() == null) {
+        if (ctx.LOCAL() == null && ctx.varlist().var(0).OB() == null && ctx.varlist().var(0).DOT() == null) {
             log.info("Encountered global variable declaration with names: {}", ctx.varlist().getText());
             List<String> varnames = ctx.varlist().var().stream()
                     .map(var -> var.NAME().getText())
@@ -51,15 +51,15 @@ public class GlobalVariableDeclarationVisitor extends LuaParserBaseVisitor<Void>
     private void createGlobalVariable(String name, Expression value) {
         switch (value) {
             case IntegerExpression integerExpression -> {
-                symbolTable.addLocalVariable(name, Type.INT_TYPE, "global");
+                symbolTable.addLocalVariable(name, Type.INT_TYPE, "global", false);
                 bytecodeGenerator.declareGlobalVariable(name, "I", integerExpression.value());
             }
             case BooleanExpression booleanExpression -> {
-                symbolTable.addLocalVariable(name, Type.BOOLEAN_TYPE,"global");
+                symbolTable.addLocalVariable(name, Type.BOOLEAN_TYPE,"global", false);
                 bytecodeGenerator.declareGlobalVariable(name, "Z", booleanExpression.value());
             }
             case StringExpression stringExpression -> {
-                symbolTable.addLocalVariable(name, Type.getType(String.class),"global");
+                symbolTable.addLocalVariable(name, Type.getType(String.class),"global", false);
                 bytecodeGenerator.declareGlobalVariable(name, "Ljava/lang/String;", stringExpression.value());
             }
             default -> throw new IllegalStateException("Unexpected value: " + value);

@@ -5,13 +5,18 @@ import lombok.extern.slf4j.Slf4j;
 import org.example.antlr.LuaParser;
 import org.example.antlr.LuaParserBaseVisitor;
 import org.example.bytecode.ExpressionBuilder;
+import org.example.bytecode.FunctionCallBuilder;
 import org.example.bytecode.LuaBytecodeGenerator;
+import org.example.bytecode.statement.VariableBuilder;
 import org.example.domain.Condition;
 import org.example.domain.expression.Expression;
 import org.example.domain.expression.VariableExpression;
 import org.example.domain.expression.constant.IntegerExpression;
+import org.example.domain.expression.constant.StringExpression;
 import org.example.domain.statement.Statement;
-import org.example.parser.ExpressionVisitor;
+import org.example.parser.expression.ExpressionEvalVisitor;
+import org.example.parser.expression.ExpressionTypeVisitor;
+import org.example.parser.expression.ExpressionVisitor;
 import org.example.symbol.VariableSymbol;
 import org.example.symbol.SymbolTable;
 import org.objectweb.asm.Type;
@@ -27,6 +32,8 @@ public class StatementVisitor extends LuaParserBaseVisitor<Statement> {
 
     private final VariableDeclarationVisitor variableDeclarationVisitor;
     private final ExpressionVisitor expressionVisitor;
+    private final ExpressionEvalVisitor expressionEvalVisitor;
+    private final ExpressionTypeVisitor expressionTypeVisitor;
 
     private final LuaBytecodeGenerator bytecodeGenerator;
     private final SymbolTable symbolTable;
@@ -56,24 +63,45 @@ public class StatementVisitor extends LuaParserBaseVisitor<Statement> {
 
         // Создать переменную для счетчика цикла
         VariableSymbol counterSymbol = null;
-        if (init instanceof IntegerExpression intInit) {
+        if (init instanceof IntegerExpression || init instanceof VariableExpression) {
             symbolTable.addLocalVariable(counter, Type.INT_TYPE, "counter");
             counterSymbol = symbolTable.getLocalVariable(counter);
-            bytecodeGenerator.declareLocalVariable(
-                    counterSymbol.name(), Type.INT_TYPE.getDescriptor(), intInit.value(),
-                    counterSymbol.index()
-            );
+            new VariableBuilder(bytecodeGenerator.getMethodVisitor())
+                    .withValue(() -> new ExpressionBuilder(bytecodeGenerator.getMethodVisitor())
+                            .loadExpression(init)
+                    ).storeLocal(counterSymbol.index(), Type.INT_TYPE.getDescriptor());
+//            bytecodeGenerator.declareLocalVariable(
+//                    counterSymbol.name(), Type.INT_TYPE.getDescriptor(), intInit.value(),
+//                    counterSymbol.index()
+//            );
+//        } else if (init instanceof VariableExpression varInit) {
+//            symbolTable.addLocalVariable(counter, Type.INT_TYPE, "counter");
+//            counterSymbol = symbolTable.getLocalVariable(counter);
+//            new VariableBuilder(bytecodeGenerator.getMethodVisitor())
+//                    .withValue(() -> new ExpressionBuilder(bytecodeGenerator.getMethodVisitor())
+//                            .loadExpression(varInit)
+//                    ).storeLocal(counterSymbol.index(), Type.INT_TYPE.getDescriptor());
         }
 
         // Создать переменную для предела цикла
         VariableSymbol limitSymbol = null;
-        if (limit instanceof IntegerExpression intLimit) {
+        if (limit instanceof IntegerExpression || limit instanceof VariableExpression) {
             symbolTable.addLocalVariable(counter + "_limit", Type.INT_TYPE, "limit");
             limitSymbol = symbolTable.getLocalVariable(counter + "_limit");
-            bytecodeGenerator.declareLocalVariable(
-                    limitSymbol.name(), Type.INT_TYPE.getDescriptor(), intLimit.value(),
-                    limitSymbol.index()
-            );
+            new VariableBuilder(bytecodeGenerator.getMethodVisitor())
+                    .withValue(() -> new ExpressionBuilder(bytecodeGenerator.getMethodVisitor())
+                            .loadExpression(limit)
+                    ).storeLocal(limitSymbol.index(), Type.INT_TYPE.getDescriptor());
+//            bytecodeGenerator.declareLocalVariable(
+//                    limitSymbol.name(), Type.INT_TYPE.getDescriptor(), intLimit.value(),
+//                    limitSymbol.index()
+//            );
+        } else {
+            symbolTable.addLocalVariable(counter + "_limit", Type.INT_TYPE, "limit");
+            limitSymbol = symbolTable.getLocalVariable(counter + "_limit");
+            new VariableBuilder(bytecodeGenerator.getMethodVisitor())
+                    .withValue(() -> expressionEvalVisitor.visit(ctx.exp(1)))
+                    .storeLocal(limitSymbol.index(), Type.INT_TYPE.getDescriptor());
         }
 
         bytecodeGenerator.generateForLoop(counterSymbol, limitSymbol, () -> {
@@ -125,15 +153,46 @@ public class StatementVisitor extends LuaParserBaseVisitor<Statement> {
         log.info("Visiting function call");
         if (ctx.NAME() != null && ctx.NAME(0).getText().equals("print")) {
             log.info("Encountered print statement");
-            var arg = ctx.args().explist().exp(0);
+            var arg  = ctx.args().explist().exp(0);
             Expression text = arg.accept(expressionVisitor);
             if (text instanceof VariableExpression var) {
                 log.info("Printing variable: {}", var.symbol());
                 bytecodeGenerator.generatePrint(var.symbol());
-            } else {
-                bytecodeGenerator.generatePrint(text);
+//                bytecodeGenerator.generatePrint(text);
+                return null;
             }
+
+            Type type = expressionTypeVisitor.visit(ctx.args().explist().exp(0));
+            expressionEvalVisitor.visit(ctx.args().explist());
+            bytecodeGenerator.printStackValue(type);
+//            if (text instanceof VariableExpression var) {
+//                log.info("Printing variable: {}", var.symbol());
+//                bytecodeGenerator.generatePrint(var.symbol());
+//            } else {
+//                bytecodeGenerator.generatePrint(text);
+//            }
+        } else if (ctx.NAME(0) != null && ctx.NAME(1) != null) {
+            if (ctx.NAME(0).getText().equals("io") && ctx.NAME(1).getText().equals("read")) {
+                Expression arg = ctx.args().explist().exp(0).accept(expressionVisitor);
+                StringExpression type = (StringExpression) arg;
+                bytecodeGenerator.generateIoRead(type.value());
+            }
+        } else {
+            String functionName = ctx.NAME(0).getText();
+            log.info("Function name: {}", functionName);
+            List<Expression> arguments = new ArrayList<>();
+            if (ctx.args().explist() != null) {
+                arguments = ctx.args().explist().exp().stream()
+                        .map(exp -> exp.accept(expressionVisitor))
+                        .toList();
+            }
+            log.info("Arguments: {}", arguments);
+            new FunctionCallBuilder(bytecodeGenerator.getMethodVisitor())
+                    .putArguments(arguments)
+                    .forgetArguments()
+                    .callFunction(symbolTable.getFunction(functionName));
         }
+
         return null;
     }
 
@@ -144,18 +203,30 @@ public class StatementVisitor extends LuaParserBaseVisitor<Statement> {
 
     @Override
     public Statement visitRetstat(LuaParser.RetstatContext ctx) {
-        log.info("Visiting return statement");
-        Expression expression = ctx.explist().exp(0).accept(expressionVisitor);
-        log.info("Returning expression: {}", expression);
-        new ExpressionBuilder(bytecodeGenerator.getMethodVisitor())
-                .loadExpression(expression);
+        if (ctx.explist() != null) {
+//            List<Expression> returnValues = ctx.explist().exp().stream()
+//                    .map(exp -> exp.accept(expressionVisitor))
+//                    .toList();
+//
+//            Expression returnValue = returnValues.getFirst();
+            Type returnType = expressionTypeVisitor.visit(ctx.explist().exp(0));
+            expressionEvalVisitor.visit(ctx.explist().exp(0));
+            new ExpressionBuilder(bytecodeGenerator.getMethodVisitor())
+//                    .loadExpression(returnValue)
+                    .addReturn(returnType);
+        } else {
+            new ExpressionBuilder(bytecodeGenerator.getMethodVisitor())
+                    .addReturn(Type.VOID_TYPE);
+        }
         return null;
     }
 
     @Override
     public Statement visitBlock(LuaParser.BlockContext ctx) {
         ctx.stat().forEach(this::visit);
-        visit(ctx.retstat());
+        if (ctx.retstat() != null) {
+            visit(ctx.retstat());
+        }
         return null;
     }
 }

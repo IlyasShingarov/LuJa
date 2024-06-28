@@ -1,4 +1,4 @@
-package org.example.parser;
+package org.example.parser.expression;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -10,12 +10,16 @@ import org.example.domain.expression.constant.BooleanExpression;
 import org.example.domain.expression.constant.FloatExpression;
 import org.example.domain.expression.constant.IntegerExpression;
 import org.example.domain.expression.constant.StringExpression;
+import org.example.parser.OperationVisitor;
 import org.example.symbol.VariableSymbol;
 import org.example.symbol.SymbolTable;
+import org.objectweb.asm.Type;
 import org.springframework.stereotype.Component;
 
+import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @Component
@@ -68,7 +72,19 @@ public class ExpressionVisitor extends LuaParserBaseVisitor<Expression> {
                 // Обработка массива
                 log.info("Array access detected: {}", ctx.getText());
                 Expression index = visit(ctx.exp(0));
-                return new ArrayAccessExpression(new VariableExpression(symbol), index);
+                String arrDescriptor = symbol.type().getDescriptor();
+                Type elementType;
+                if (arrDescriptor.length() == 1) {
+                    elementType = Type.getType(arrDescriptor);
+                } else {
+                    elementType= Type.getType(arrDescriptor.substring(1));
+                }
+                return new ArrayAccessExpression(new VariableExpression(symbol), elementType, index);
+            } else if (!ctx.DOT().isEmpty() && ctx.NAME().size() > 1) {
+                // Обработка поля
+                log.info("Field access detected: {}", ctx.getText());
+                String fieldName = ctx.NAME(1).getText();
+                return new TableAccessExpression(new VariableExpression(symbol), fieldName);
             } else {
                 return new VariableExpression(symbol);
             }
@@ -76,8 +92,41 @@ public class ExpressionVisitor extends LuaParserBaseVisitor<Expression> {
             // Обработка выражения в скобках
             log.info("Bracket expression detected: {}", ctx.getText());
             return visit(ctx.exp(0));
+        } else if (ctx.functioncall() != null) {
+            log.info("Function call detected: {}", ctx.functioncall().getText());
+            return ctx.functioncall().accept(this);
         }
         return super.visitPrefixexp(ctx);
+    }
+
+    @Override
+    public Expression visitFunctioncall(LuaParser.FunctioncallContext ctx) {
+        log.info("Visiting function call: {}", ctx.getText());
+        if (ctx.NAME(0).getText().equals("io") && ctx.NAME(1).getText().equals("read")) {
+            log.info("IO read detected");
+            Expression arg = visit(ctx.args().explist().exp(0));
+            StringExpression type = (StringExpression) arg;
+            Type returnType = switch (type.value()) {
+                case "int" -> Type.INT_TYPE;
+                case "string" -> Type.getType(String.class);
+                default -> throw new IllegalArgumentException("Unknown type: " + type.value());
+            };
+            return new BuiltInFunctionExpression(
+                    "io.read", returnType,
+                    () -> luaBytecodeGenerator.generateIoRead(type.value())
+            );
+        } else {
+            String functionName = ctx.NAME(0).getText();
+            log.info("Function name: {}", functionName);
+            List<Expression> arguments = new ArrayList<>();
+            if (ctx.args().explist() != null) {
+                for (LuaParser.ExpContext expContext : ctx.args().explist().exp()) {
+                    arguments.add(visit(expContext));
+                }
+            }
+            return new FunctionExpression(functionName, symbolTable.getFunction(functionName), arguments);
+        }
+//        return super.visitFunctioncall(ctx);
     }
 
     @Override
@@ -86,6 +135,8 @@ public class ExpressionVisitor extends LuaParserBaseVisitor<Expression> {
 
         if (ctx.TRUE() != null || ctx.FALSE() != null) {
             return new BooleanExpression(ctx.TRUE() != null);
+        } else if (ctx.NIL() != null) {
+            log.info("Nil detected");
         } else if (ctx.binop() != null) {
             log.info("Binary operation detected: {}", ctx.binop().getText());
             var left = visit(ctx.exp(0));
@@ -120,16 +171,41 @@ public class ExpressionVisitor extends LuaParserBaseVisitor<Expression> {
     @Override
     public Expression visitTableconstructor(LuaParser.TableconstructorContext ctx) {
         log.info("Visiting table constructor: {}", ctx.getText());
-
         int tableSize = ctx.fieldlist() != null ? ctx.fieldlist().field().size() : 0;
-        List<Expression> elements = new ArrayList<>();
+        List<Map.Entry<Expression, Expression>> associativeElements = new ArrayList<>();
+        List<Expression> arrayElements = new ArrayList<>();
+
         if (ctx.fieldlist() != null) {
             for (LuaParser.FieldContext field : ctx.fieldlist().field()) {
-                elements.add(field.accept(this));
+                if (field.exp(0) != null && field.exp(1) != null) { // Ассоциативный элемент
+                    Expression key = field.exp(0).accept(this);
+                    Expression value = field.exp(1).accept(this);
+                    associativeElements.add(new AbstractMap.SimpleEntry<>(key, value));
+                } else if (field.NAME() != null && field.exp() != null) { // Ассоциативный элемент с именем
+                    Expression key = new StringExpression(field.NAME().getText());
+                    Expression value = field.exp(0).accept(this);
+                    associativeElements.add(new AbstractMap.SimpleEntry<>(key, value));
+                } else if (field.exp() != null) { // Индексированный элемент
+                    arrayElements.add(field.exp(0).accept(this));
+                }
             }
         }
 
-        return new ArrayTableExpression(elements, tableSize);
+        if (!associativeElements.isEmpty()) {
+            return new TableExpression(associativeElements, tableSize);
+        } else {
+            return new ArrayTableExpression(arrayElements, tableSize);
+        }
+
+//        int tableSize = ctx.fieldlist() != null ? ctx.fieldlist().field().size() : 0;
+//        List<Expression> elements = new ArrayList<>();
+//        if (ctx.fieldlist() != null) {
+//            for (LuaParser.FieldContext field : ctx.fieldlist().field()) {
+//                elements.add(field.accept(this));
+//            }
+//        }
+//
+//        return new ArrayTableExpression(elements, tableSize);
     }
 
     private Expression handleAddition(Expression left, Expression right) {

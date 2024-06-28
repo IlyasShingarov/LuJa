@@ -97,6 +97,9 @@ public class LuaBytecodeGenerator implements Opcodes {
 
             if (condition.condition() instanceof BinaryExpression binaryExpression) {
                 // Вычисление условия. На стеке остается значение либо 0, либо 1
+//                new ExpressionBuilder(mv)
+//                        .loadExpression(binaryExpression.left())
+//                        .loadExpression(binaryExpression.right());
                 generateComparison(binaryExpression.left(), binaryExpression.right(), binaryExpression.operation());
             }
 
@@ -144,14 +147,107 @@ public class LuaBytecodeGenerator implements Opcodes {
         //  - FLOAT & FLOAT
         //  - STRING
         // Выполняем сравнение
-        loadOperand(left);
-        loadOperand(right);
+//        loadOperand(left);
+//        loadOperand(right);
 
         Label trueLabel = new Label();
         Label endLabel = new Label();
 
+
         Type leftType = left.getType();
         Type rightType = right.getType();
+
+        if (left instanceof ArrayAccessExpression || right instanceof ArrayAccessExpression) {
+            // конвертируем операнды в int
+            loadOperand(left);
+            convertStackToInt();
+            loadOperand(right);
+            convertStackToInt();
+
+            leftType = Type.INT_TYPE;
+            rightType = Type.INT_TYPE;
+        } else {
+            loadOperand(left);
+            loadOperand(right);
+        }
+
+        if (leftType.getSort() == Type.INT && rightType.getSort() == Type.INT) {
+            // Сравнение двух целочисленных значений
+            switch (operation) {
+                case EQUALS -> mv.visitJumpInsn(Opcodes.IF_ICMPEQ, trueLabel);
+                case NOT_EQUALS -> mv.visitJumpInsn(Opcodes.IF_ICMPNE, trueLabel);
+                case LESS_THAN -> mv.visitJumpInsn(Opcodes.IF_ICMPLT, trueLabel);
+                case LESS_THAN_OR_EQUALS -> mv.visitJumpInsn(Opcodes.IF_ICMPLE, trueLabel);
+                case GREATER_THAN -> mv.visitJumpInsn(Opcodes.IF_ICMPGT, trueLabel);
+                case GREATER_THAN_OR_EQUALS -> mv.visitJumpInsn(Opcodes.IF_ICMPGE, trueLabel);
+                default -> throw new IllegalArgumentException("Unknown comparison operation: " + operation);
+            }
+        } else if (leftType.getSort() == Type.FLOAT || rightType.getSort() == Type.FLOAT) {
+            // Приведение к типу FLOAT и сравнение
+            if (leftType.getSort() == Type.INT || rightType.getSort() == Type.INT) {
+                mv.visitInsn(Opcodes.I2F);
+            }
+            mv.visitInsn(Opcodes.FCMPG);
+            switch (operation) {
+                case EQUALS -> mv.visitJumpInsn(Opcodes.IFEQ, trueLabel);
+                case NOT_EQUALS -> mv.visitJumpInsn(Opcodes.IFNE, trueLabel);
+                case LESS_THAN -> mv.visitJumpInsn(Opcodes.IFLT, trueLabel);
+                case LESS_THAN_OR_EQUALS -> mv.visitJumpInsn(Opcodes.IFLE, trueLabel);
+                case GREATER_THAN -> mv.visitJumpInsn(Opcodes.IFGT, trueLabel);
+                case GREATER_THAN_OR_EQUALS -> mv.visitJumpInsn(Opcodes.IFGE, trueLabel);
+                default -> throw new IllegalArgumentException("Unknown comparison operation: " + operation);
+            }
+        } else if (leftType.getSort() == Type.OBJECT && rightType.getSort() == Type.OBJECT) {
+            // Сравнение строк
+            if (leftType.equals(Type.getType(String.class)) && rightType.equals(Type.getType(String.class))) {
+                // Приведение объектов к строкам
+                mv.visitTypeInsn(Opcodes.CHECKCAST, "java/lang/String");
+                mv.visitTypeInsn(Opcodes.CHECKCAST, "java/lang/String");
+
+                // Сравнение строк
+                switch (operation) {
+                    case EQUALS -> mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/String", "equals", "(Ljava/lang/Object;)Z", false);
+                    case NOT_EQUALS -> {
+                        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/String", "equals", "(Ljava/lang/Object;)Z", false);
+                        mv.visitInsn(Opcodes.ICONST_1);
+                        mv.visitInsn(Opcodes.IXOR);
+                    }
+                    default -> throw new IllegalArgumentException("Unknown comparison operation: " + operation);
+                }
+            } else {
+                throw new IllegalArgumentException("Unsupported object types for comparison: " + leftType + " and " + rightType);
+            }
+        } else {
+            throw new IllegalArgumentException("Unsupported types for comparison: " + leftType + " and " + rightType);
+        }
+
+        // Если сравнение ложно, загружаем 0 (false) и переходим к метке конца
+        mv.visitInsn(Opcodes.ICONST_0);
+        mv.visitJumpInsn(Opcodes.GOTO, endLabel);
+
+        // Метка для истинного результата сравнения
+        mv.visitLabel(trueLabel);
+        mv.visitInsn(Opcodes.ICONST_1);
+
+        // Метка конца
+        mv.visitLabel(endLabel);
+    }
+
+    public void generateComparison(Type left, Type right, BinaryOperation operation) {
+        // Загружаем две переменных на стек
+        // Определяем тип сравнения
+        //  - INT & INT
+        //  - INT & FLOAT || FLOAT & INT
+        //  - FLOAT & FLOAT
+        //  - STRING
+        // Выполняем сравнение
+
+        Label trueLabel = new Label();
+        Label endLabel = new Label();
+
+
+        Type leftType = left;
+        Type rightType = right;
 
         if (leftType.getSort() == Type.INT && rightType.getSort() == Type.INT) {
             // Сравнение двух целочисленных значений
@@ -296,10 +392,126 @@ public class LuaBytecodeGenerator implements Opcodes {
                 "(%s)V".formatted(symbol.type().getDescriptor()), false);
     }
 
+    public void printStackValue(Type type) {
+        mv.visitFieldInsn(Opcodes.GETSTATIC, "java/lang/System", "out", "Ljava/io/PrintStream;");
+        mv.visitInsn(Opcodes.SWAP);
+        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/io/PrintStream", "println",
+                "(%s)V".formatted(type.getDescriptor()), false);
+    }
+
+    public void printStackValue() {
+//        Label labelInteger = new Label();
+//        Label labelFloat = new Label();
+//        Label labelBoolean = new Label();
+//        Label labelString = new Label();
+//        Label end = new Label();
+//
+//        mv.visitFieldInsn(Opcodes.GETSTATIC, "java/lang/System", "out", "Ljava/io/PrintStream;");
+//        mv.visitInsn(Opcodes.SWAP); // Меняем местами "System.out" и значение на стеке
+//
+//        // Дублируем значение для проверки
+//        mv.visitInsn(Opcodes.DUP);
+//        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/Object", "getClass", "()Ljava/lang/Class;", false);
+//
+//        // Проверка Integer
+//        mv.visitLdcInsn(Type.getType(Integer.class));
+//        mv.visitJumpInsn(Opcodes.IF_ACMPEQ, labelInteger);
+//
+//        // Проверка Float
+//        mv.visitInsn(Opcodes.DUP);
+//        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/Object", "getClass", "()Ljava/lang/Class;", false);
+//        mv.visitLdcInsn(Type.getType(Float.class));
+//        mv.visitJumpInsn(Opcodes.IF_ACMPEQ, labelFloat);
+//
+//        // Проверка Boolean
+//        mv.visitInsn(Opcodes.DUP);
+//        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/Object", "getClass", "()Ljava/lang/Class;", false);
+//        mv.visitLdcInsn(Type.getType(Boolean.class));
+//        mv.visitJumpInsn(Opcodes.IF_ACMPEQ, labelBoolean);
+//
+//        // Проверка String
+//        mv.visitInsn(Opcodes.DUP);
+//        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/Object", "getClass", "()Ljava/lang/Class;", false);
+//        mv.visitLdcInsn(Type.getType(String.class));
+//        mv.visitJumpInsn(Opcodes.IF_ACMPEQ, labelString);
+//
+//        // Если тип не определен
+//        mv.visitInsn(Opcodes.POP2); // Удаляем дублированное значение и "System.out"
+//        mv.visitJumpInsn(Opcodes.GOTO, end);
+//
+//        // Печать Integer
+//        mv.visitLabel(labelInteger);
+//        mv.visitTypeInsn(Opcodes.CHECKCAST, "java/lang/Integer");
+//        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/Integer", "intValue", "()I", false);
+//        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/io/PrintStream", "println", "(I)V", false);
+//        mv.visitJumpInsn(Opcodes.GOTO, end);
+//
+//        // Печать Float
+//        mv.visitLabel(labelFloat);
+//        mv.visitTypeInsn(Opcodes.CHECKCAST, "java/lang/Float");
+//        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/Float", "floatValue", "()F", false);
+//        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/io/PrintStream", "println", "(F)V", false);
+//        mv.visitJumpInsn(Opcodes.GOTO, end);
+//
+//        // Печать Boolean
+//        mv.visitLabel(labelBoolean);
+//        mv.visitTypeInsn(Opcodes.CHECKCAST, "java/lang/Boolean");
+//        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/Boolean", "booleanValue", "()Z", false);
+//        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/io/PrintStream", "println", "(Z)V", false);
+//        mv.visitJumpInsn(Opcodes.GOTO, end);
+//
+//        // Печать String
+//        mv.visitLabel(labelString);
+//        mv.visitTypeInsn(Opcodes.CHECKCAST, "java/lang/String");
+//        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/io/PrintStream", "println", "(Ljava/lang/String;)V", false);
+//
+//        // Метка конца
+//        mv.visitLabel(end);
+//        mv.visitFieldInsn(Opcodes.GETSTATIC, "java/lang/System", "out", "Ljava/io/PrintStream;");
+//        mv.visitInsn(Opcodes.SWAP);
+//        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/io/PrintStream", "println", "(I)V", false);
+    }
+
     public void generatePrint(Expression expression) {
         mv.visitFieldInsn(Opcodes.GETSTATIC, "java/lang/System", "out", "Ljava/io/PrintStream;");
         loadOperand(expression);
         mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/io/PrintStream", "println", "(I)V", false);
+    }
+
+    public void generateIoRead(String type) {
+        // Creating new BufferedReader(System.in)
+        mv.visitTypeInsn(NEW, "java/io/BufferedReader");        // Create new BufferedReader
+        mv.visitInsn(DUP);                                      // Duplicate BufferedReader reference
+        mv.visitTypeInsn(NEW, "java/io/InputStreamReader");     // Create new InputStreamReader
+        mv.visitInsn(DUP);                                      // Duplicate InputStreamReader reference
+        mv.visitFieldInsn(GETSTATIC, "java/lang/System", "in", "Ljava/io/InputStream;"); // Get System.in
+        mv.visitMethodInsn(INVOKESPECIAL, "java/io/InputStreamReader", "<init>", "(Ljava/io/InputStream;)V", false); // Initialize InputStreamReader
+        mv.visitMethodInsn(INVOKESPECIAL, "java/io/BufferedReader", "<init>", "(Ljava/io/Reader;)V", false); // Initialize BufferedReader
+
+        // Call BufferedReader.readLine()
+        mv.visitMethodInsn(INVOKEVIRTUAL, "java/io/BufferedReader", "readLine", "()Ljava/lang/String;", false);
+
+        // Convert the read value to the appropriate type
+        switch (type.toLowerCase()) {
+            case "int":
+                mv.visitMethodInsn(INVOKESTATIC, "java/lang/Integer", "parseInt", "(Ljava/lang/String;)I", false);
+                break;
+            case "float":
+                mv.visitMethodInsn(INVOKESTATIC, "java/lang/Float", "parseFloat", "(Ljava/lang/String;)F", false);
+                break;
+            case "boolean":
+                mv.visitMethodInsn(INVOKESTATIC, "java/lang/Boolean", "parseBoolean", "(Ljava/lang/String;)Z", false);
+                break;
+            case "string":
+            default:
+                // No conversion needed, readLine already returns a String
+                break;
+        }
+    }
+
+    // Функция преобразующее верхнее число на стеке в тип Integer
+    public void convertStackToInt() {
+        mv.visitMethodInsn(INVOKESTATIC, "java/lang/Integer", "valueOf", "(I)Ljava/lang/Integer;", false);
     }
 
 

@@ -138,7 +138,7 @@ public class ExpressionBuilder implements Opcodes {
         }
     }
 
-    public void loadExpression(Expression expression) {
+    public ExpressionBuilder loadExpression(Expression expression) {
 
         switch (expression) {
             case ConstantExpression constExpr -> mv.visitLdcInsn(constExpr.value());
@@ -147,13 +147,39 @@ public class ExpressionBuilder implements Opcodes {
                 if (symbol.metatype().equals("global")) {
                     mv.visitFieldInsn(GETSTATIC, "GeneratedClass", symbol.name(), symbol.type().getDescriptor());
                 } else {
+                    if (symbol.isArray()) {
+                        mv.visitVarInsn(ALOAD, symbol.index());
+                    } else {
                     new VariableBuilder(mv)
                             .loadLocal(symbol.index(), symbol.type().getDescriptor());
+                    }
                 }
             }
             case BinaryExpression binExpr -> generateBinaryOperation(binExpr.left(), binExpr.right(), binExpr.operation().getOpcode(binExpr.left().getType()));
             default -> throw new IllegalArgumentException("Unsupported expression type: " + expression.getClass().getName());
         }
+        return this;
+    }
+
+    public ExpressionBuilder addReturn(Type returnType) {
+        if (returnType.equals(Type.VOID_TYPE)) {
+            mv.visitInsn(RETURN);
+        } else if (returnType.equals(Type.INT_TYPE)) {
+            mv.visitInsn(IRETURN);
+        } else if (returnType.equals(Type.FLOAT_TYPE)) {
+            mv.visitInsn(FRETURN);
+        } else if (returnType.equals(Type.BOOLEAN_TYPE)) {
+            mv.visitInsn(IRETURN);
+        } else if (returnType.equals(Type.getType(Object.class))) {
+            mv.visitInsn(ARETURN);
+        } else if (returnType.equals(Type.getType(String.class))) {
+            mv.visitInsn(ARETURN);
+        } else if (returnType.equals(Type.getType(Object[].class))) {
+            mv.visitInsn(ARETURN);
+        } else {
+            throw new IllegalStateException("Unsupported return type: " + returnType);
+        }
+        return this;
     }
 
     public void getIntArrayElement(int arrayIndex, Expression elementIndex) {
@@ -164,5 +190,15 @@ public class ExpressionBuilder implements Opcodes {
         // Анбоксинг объекта Integer в примитивный int
         mv.visitTypeInsn(Opcodes.CHECKCAST, "java/lang/Integer");
         mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/Integer", "intValue", "()I", false);
+    }
+
+    public void getIntArrayElement(boolean cast) {
+        mv.visitInsn(Opcodes.AALOAD); // Получение значения (объекта Integer) из массива
+
+        // Анбоксинг объекта Integer в примитивный int
+        if (cast) {
+            mv.visitTypeInsn(Opcodes.CHECKCAST, "java/lang/Integer");
+            mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/Integer", "intValue", "()I", false);
+        }
     }
 }
