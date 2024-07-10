@@ -7,4 +7,9 @@ public record BooleanExpression(Boolean value) implements ConstantExpression {
     public Type getType() {
         return Type.BOOLEAN_TYPE;
     }
+
+    @Override
+    public boolean hasVariableExpression() {
+        return false;
+    }
 }

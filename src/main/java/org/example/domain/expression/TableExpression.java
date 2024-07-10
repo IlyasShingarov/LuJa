@@ -14,4 +14,9 @@ public record TableExpression(
     public Type getType() {
         return Type.getType(HashMap.class);
     }
+
+    @Override
+    public boolean hasVariableExpression() {
+        return false;
+    }
 }

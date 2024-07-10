@@ -14,4 +14,9 @@ public record FunctionExpression(
     public Type getType() {
         return functionSymbol.type();
     }
+
+    @Override
+    public boolean hasVariableExpression() {
+        return false;
+    }
 }

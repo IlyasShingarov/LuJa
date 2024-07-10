@@ -11,6 +11,7 @@ import org.example.bytecode.LuaBytecodeGenerator;
 import org.example.parser.ChunkVisitor;
 import org.example.parser.global.GlobalFunctionDeclarationVisitor;
 import org.example.parser.global.GlobalVariableDeclarationVisitor;
+import org.example.temp.LuaChunkVisitor;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -18,7 +19,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import java.io.File;
 
 @Slf4j
-@SpringBootApplication
+@SpringBootApplication(scanBasePackages = {"org.example.temp", "org.example.luja.compiler"})
 @RequiredArgsConstructor
 public class Main implements CommandLineRunner {
 
@@ -26,11 +27,11 @@ public class Main implements CommandLineRunner {
         SpringApplication.run(Main.class, args);
     }
 
-    private final GlobalVariableDeclarationVisitor globalVariableDeclarationVisitor;
-    private final GlobalFunctionDeclarationVisitor globalFunctionDeclarationVisitor;
+//    private final GlobalVariableDeclarationVisitor globalVariableDeclarationVisitor;
+//    private final GlobalFunctionDeclarationVisitor globalFunctionDeclarationVisitor;
 
-    private final ChunkVisitor chunkVisitor;
-    private final LuaBytecodeGenerator bytecodeGenerator;
+//    private final ChunkVisitor chunkVisitor;
+//    private final LuaBytecodeGenerator bytecodeGenerator;
 
     @Override
     public void run(String... args) throws Exception {
@@ -49,19 +50,22 @@ public class Main implements CommandLineRunner {
         ParseTree tree = parser.start_();
         log.info("Got starting token: 'start_'");
 
-        bytecodeGenerator.generateMainMethod();
+        LuaChunkVisitor chunkVisitor = new LuaChunkVisitor();
+        chunkVisitor.visit(tree);
 
-        tree.accept(globalVariableDeclarationVisitor);
-        tree.accept(globalFunctionDeclarationVisitor);
+//        bytecodeGenerator.generateMainMethod();
 
-        tree.accept(chunkVisitor);
+//        tree.accept(globalVariableDeclarationVisitor);
+//        tree.accept(globalFunctionDeclarationVisitor);
 
-        bytecodeGenerator.generateExitMain();
-        byte[] bytecode = bytecodeGenerator.getBytecode();
+//        tree.accept(chunkVisitor);
+
+//        bytecodeGenerator.generateExitMain();
+        byte[] bytecode = chunkVisitor.getBytecodeGenerator().toByteArray();
         try (var fos = new java.io.FileOutputStream("src/main/resources/GeneratedClass.class")) {
             fos.write(bytecode);
         }
-
-        log.info("Compiler finished");
+//
+//        log.info("Compiler finished");
     }
 }

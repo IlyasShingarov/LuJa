@@ -35,7 +35,7 @@ public class ExpressionVisitor extends LuaParserBaseVisitor<Expression> {
         if (ctx.INT() != null) {
             return new IntegerExpression(Integer.parseInt(ctx.INT().getText()));
         } else if (ctx.FLOAT() != null) {
-            return new FloatExpression(Float.parseFloat(ctx.FLOAT().getText()));
+            return new FloatExpression(Double.parseDouble(ctx.FLOAT().getText()));
         }
         return null;
     }
@@ -79,14 +79,14 @@ public class ExpressionVisitor extends LuaParserBaseVisitor<Expression> {
                 } else {
                     elementType= Type.getType(arrDescriptor.substring(1));
                 }
-                return new ArrayAccessExpression(new VariableExpression(symbol), elementType, index);
+//                return new ArrayAccessExpression(new VariableExpression(symbol), elementType, index);
             } else if (!ctx.DOT().isEmpty() && ctx.NAME().size() > 1) {
                 // Обработка поля
                 log.info("Field access detected: {}", ctx.getText());
                 String fieldName = ctx.NAME(1).getText();
-                return new TableAccessExpression(new VariableExpression(symbol), fieldName);
+//                return new TableAccessExpression(new VariableExpression(symbol), fieldName);
             } else {
-                return new VariableExpression(symbol);
+//                return new VariableExpression(symbol);
             }
         } else if (ctx.CP() != null) {
             // Обработка выражения в скобках

@@ -126,38 +126,38 @@ public class ExpressionBuilder implements Opcodes {
     }
 
     private void loadOperand(Expression expression) {
-        if (expression instanceof VariableExpression var) {
-            if (var.symbol().metatype().equals("global")) {
-                var symbol = var.symbol();
-                mv.visitFieldInsn(Opcodes.GETSTATIC, "GeneratedClass", symbol.name(), symbol.type().getDescriptor());
-            } else {
-                mv.visitVarInsn(Opcodes.ILOAD, var.symbol().index());
-            }
-        } else if (expression instanceof ConstantExpression constant) {
-            mv.visitLdcInsn(constant.value());
-        }
+//        if (expression instanceof VariableExpression var) {
+//            if (var.symbol().metatype().equals("global")) {
+//                var symbol = var.symbol();
+//                mv.visitFieldInsn(Opcodes.GETSTATIC, "GeneratedClass", symbol.name(), symbol.type().getDescriptor());
+//            } else {
+//                mv.visitVarInsn(Opcodes.ILOAD, var.symbol().index());
+//            }
+//        } else if (expression instanceof ConstantExpression constant) {
+//            mv.visitLdcInsn(constant.value());
+//        }
     }
 
     public ExpressionBuilder loadExpression(Expression expression) {
 
-        switch (expression) {
-            case ConstantExpression constExpr -> mv.visitLdcInsn(constExpr.value());
-            case VariableExpression varExpr -> {
-                VariableSymbol symbol = varExpr.symbol();
-                if (symbol.metatype().equals("global")) {
-                    mv.visitFieldInsn(GETSTATIC, "GeneratedClass", symbol.name(), symbol.type().getDescriptor());
-                } else {
-                    if (symbol.isArray()) {
-                        mv.visitVarInsn(ALOAD, symbol.index());
-                    } else {
-                    new VariableBuilder(mv)
-                            .loadLocal(symbol.index(), symbol.type().getDescriptor());
-                    }
-                }
-            }
-            case BinaryExpression binExpr -> generateBinaryOperation(binExpr.left(), binExpr.right(), binExpr.operation().getOpcode(binExpr.left().getType()));
-            default -> throw new IllegalArgumentException("Unsupported expression type: " + expression.getClass().getName());
-        }
+//        switch (expression) {
+//            case ConstantExpression constExpr -> mv.visitLdcInsn(constExpr.value());
+//            case VariableExpression varExpr -> {
+//                VariableSymbol symbol = varExpr.symbol();
+//                if (symbol.metatype().equals("global")) {
+//                    mv.visitFieldInsn(GETSTATIC, "GeneratedClass", symbol.name(), symbol.type().getDescriptor());
+//                } else {
+//                    if (symbol.isArray()) {
+//                        mv.visitVarInsn(ALOAD, symbol.index());
+//                    } else {
+//                    new VariableBuilder(mv)
+//                            .loadLocal(symbol.index(), symbol.type().getDescriptor());
+//                    }
+//                }
+//            }
+//            case BinaryExpression binExpr -> generateBinaryOperation(binExpr.left(), binExpr.right(), binExpr.operation().getOpcode(binExpr.left().getType()));
+//            default -> throw new IllegalArgumentException("Unsupported expression type: " + expression.getClass().getName());
+//        }
         return this;
     }
 

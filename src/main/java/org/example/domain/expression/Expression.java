@@ -4,4 +4,6 @@ import org.objectweb.asm.Type;
 
 public interface Expression {
     Type getType();
+
+    boolean hasVariableExpression();
 }

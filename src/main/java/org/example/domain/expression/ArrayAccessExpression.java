@@ -11,4 +11,9 @@ public record ArrayAccessExpression(
     public Type getType() {
         return elementType;
     }
+
+    @Override
+    public boolean hasVariableExpression() {
+        return false;
+    }
 }

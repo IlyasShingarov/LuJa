@@ -7,4 +7,9 @@ public record StringExpression(String value) implements ConstantExpression {
     public Type getType() {
         return Type.getType(String.class);
     }
+
+    @Override
+    public boolean hasVariableExpression() {
+        return false;
+    }
 }

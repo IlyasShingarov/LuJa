@@ -10,4 +10,9 @@ public record TableAccessExpression(
     public Type getType() {
         return Type.getType(Object.class);
     }
+
+    @Override
+    public boolean hasVariableExpression() {
+        return false;
+    }
 }

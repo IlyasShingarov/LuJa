@@ -26,6 +26,11 @@ public record ArrayTableExpression(
 //        return Type.getType("[" + firstElementType.getDescriptor());
     }
 
+    @Override
+    public boolean hasVariableExpression() {
+        return false;
+    }
+
     public Type getElementType() {
         return elements.isEmpty() ? Type.getType(Object.class) : elements.getFirst().getType();
     }

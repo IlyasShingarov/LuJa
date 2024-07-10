@@ -7,4 +7,9 @@ public record BinaryExpression(Expression left, Expression right, BinaryOperatio
     public Type getType() {
         return left.getType();
     }
+
+    @Override
+    public boolean hasVariableExpression() {
+        return left.hasVariableExpression() || right.hasVariableExpression();
+    }
 }

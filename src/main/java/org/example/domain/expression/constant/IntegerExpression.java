@@ -7,5 +7,10 @@ public record IntegerExpression(Integer value) implements ConstantExpression {
     public Type getType() {
         return Type.INT_TYPE;
     }
+
+    @Override
+    public boolean hasVariableExpression() {
+        return false;
+    }
 }
 

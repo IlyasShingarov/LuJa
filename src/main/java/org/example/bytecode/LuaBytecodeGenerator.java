@@ -12,18 +12,20 @@ import org.springframework.stereotype.Component;
 import java.util.List;
 
 @Slf4j
-@Component
+//@Component
 public class LuaBytecodeGenerator implements Opcodes {
 
     private ClassWriter cw;
     private MethodVisitor mainMethod;
     private MethodVisitor mv;
 
-    @PostConstruct
+//    @PostConstruct
     public void init() {
         cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS);
         cw.visit(V1_8, ACC_PUBLIC, "GeneratedClass", null, "java/lang/Object", null);
     }
+
+
 
     public void generateMainMethod() {
         mv = cw.visitMethod(ACC_PUBLIC + ACC_STATIC, "main", "([Ljava/lang/String;)V", null, null);
@@ -127,16 +129,16 @@ public class LuaBytecodeGenerator implements Opcodes {
 
 
     private void loadOperand(Expression expression) {
-        if (expression instanceof VariableExpression var) {
-            if (var.symbol().metatype().equals("global")) {
-                var symbol = var.symbol();
-                mv.visitFieldInsn(Opcodes.GETSTATIC, "GeneratedClass", symbol.name(), symbol.type().getDescriptor());
-            } else {
-                mv.visitVarInsn(Opcodes.ILOAD, var.symbol().index());
-            }
-        } else if (expression instanceof ConstantExpression constant) {
-            mv.visitLdcInsn(constant.value());
-        }
+//        if (expression instanceof VariableExpression var) {
+//            if (var.symbol().metatype().equals("global")) {
+//                var symbol = var.symbol();
+//                mv.visitFieldInsn(Opcodes.GETSTATIC, "GeneratedClass", symbol.name(), symbol.type().getDescriptor());
+//            } else {
+//                mv.visitVarInsn(Opcodes.ILOAD, var.symbol().index());
+//            }
+//        } else if (expression instanceof ConstantExpression constant) {
+//            mv.visitLdcInsn(constant.value());
+//        }
     }
 
     public void generateComparison(Expression left, Expression right, BinaryOperation operation) {
@@ -358,18 +360,18 @@ public class LuaBytecodeGenerator implements Opcodes {
         // Метка начала цикла (условие)
         mv.visitLabel(startLoop);
 
-        // Генерация кода условия и проверки
-        if (condition instanceof BooleanExpression booleanExpr) {
-            mv.visitLdcInsn(booleanExpr.value());
-            mv.visitJumpInsn(Opcodes.IFEQ, endLoop);
-        } else if (condition instanceof VariableExpression varExpr) {
-            VariableSymbol symbol = varExpr.symbol();
-            mv.visitVarInsn(Opcodes.ILOAD, symbol.index());
-            mv.visitJumpInsn(Opcodes.IFEQ, endLoop);
-        } else if (condition instanceof BinaryExpression binaryExpr) {
-            generateComparison(binaryExpr.left(), binaryExpr.right(), binaryExpr.operation());
-            mv.visitJumpInsn(Opcodes.IFEQ, endLoop);
-        }
+//        // Генерация кода условия и проверки
+//        if (condition instanceof BooleanExpression booleanExpr) {
+//            mv.visitLdcInsn(booleanExpr.value());
+//            mv.visitJumpInsn(Opcodes.IFEQ, endLoop);
+//        } else if (condition instanceof VariableExpression varExpr) {
+//            VariableSymbol symbol = varExpr.symbol();
+//            mv.visitVarInsn(Opcodes.ILOAD, symbol.index());
+//            mv.visitJumpInsn(Opcodes.IFEQ, endLoop);
+//        } else if (condition instanceof BinaryExpression binaryExpr) {
+//            generateComparison(binaryExpr.left(), binaryExpr.right(), binaryExpr.operation());
+//            mv.visitJumpInsn(Opcodes.IFEQ, endLoop);
+//        }
 
         // Генерация тела цикла
         bodyGenerator.run();

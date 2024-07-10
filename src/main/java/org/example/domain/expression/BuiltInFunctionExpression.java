@@ -11,4 +11,9 @@ public record BuiltInFunctionExpression(
     public Type getType() {
         return returnType;
     }
+
+    @Override
+    public boolean hasVariableExpression() {
+        return false;
+    }
 }

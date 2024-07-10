@@ -170,11 +170,11 @@ public class VariableDeclarationVisitor extends LuaParserBaseVisitor<VariableDec
                         .build();
             }
             case VariableExpression variableExpression -> {
-                int index = symbolTable.getLocalVariableIndex(name, variableExpression.symbol().type());
-                new VariableBuilder(bytecodeGenerator.getMethodVisitor())
-                        .isLocal()
-                        .withIndex(index)
-                        .moveFrom(variableExpression.symbol().index(), variableExpression.symbol().type().getDescriptor());
+//                int index = symbolTable.getLocalVariableIndex(name, variableExpression.symbol().type());
+//                new VariableBuilder(bytecodeGenerator.getMethodVisitor())
+//                        .isLocal()
+//                        .withIndex(index)
+//                        .moveFrom(variableExpression.symbol().index(), variableExpression.symbol().type().getDescriptor());
             }
             case ArrayTableExpression arrayTableExpression -> {
                 int index = symbolTable.getLocalVariableIndex(name, arrayTableExpression.getType(), true);
@@ -199,11 +199,11 @@ public class VariableDeclarationVisitor extends LuaParserBaseVisitor<VariableDec
                                 .storeLocal(index, Type.INT_TYPE.getDescriptor());
                     }
                     case VariableExpression variableExpression -> {
-                        int index = symbolTable.getLocalVariableIndex(name, variableExpression.symbol().type());
-                        new ExpressionBuilder(bytecodeGenerator.getMethodVisitor())
-                                .getIntArrayElement(arrayVar.symbol().index(), variableExpression);
-                        new VariableBuilder(bytecodeGenerator.getMethodVisitor())
-                                .storeLocal(index, variableExpression.symbol().type().getDescriptor());
+//                        int index = symbolTable.getLocalVariableIndex(name, variableExpression.symbol().type());
+//                        new ExpressionBuilder(bytecodeGenerator.getMethodVisitor())
+//                                .getIntArrayElement(arrayVar.symbol().index(), variableExpression);
+//                        new VariableBuilder(bytecodeGenerator.getMethodVisitor())
+//                                .storeLocal(index, variableExpression.symbol().type().getDescriptor());
                     }
                     case BinaryExpression binaryExpression -> {
                         bytecodeGenerator.getMethodVisitor().visitInsn(Opcodes.NOP);

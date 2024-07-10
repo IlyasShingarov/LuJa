@@ -14,9 +14,25 @@ java {
     }
 }
 
+tasks.register<Jar>("runtimeJar") {
+    archiveClassifier.set("runtime")
+
+    // Use only the classes from the package org.example.runtime
+    from("build/classes/java/main") {
+        include("org/example/luja/runtime/**")
+    }
+
+    // Ensure classes are compiled before creating the jar
+    dependsOn(tasks.named("classes"))
+}
+
+tasks.named("build") {
+    dependsOn("runtimeJar")
+}
 repositories {
     mavenCentral()
 }
+
 
 dependencies {
     implementation("org.antlr:antlr4:4.13.1")
@@ -25,6 +41,7 @@ dependencies {
 
     implementation("org.apache.commons:commons-lang3:3.14.0")
 
+    implementation("com.fasterxml.jackson.core:jackson-databind:2.5.0")
 
     implementation("org.springframework.boot:spring-boot-starter")
 

@@ -44,7 +44,7 @@ public class ExpressionEvalVisitor extends LuaParserBaseVisitor<Void> {
         } else if (ctx.FLOAT() != null) {
             new ExpressionBuilder(bytecodeGenerator.getMethodVisitor())
                     .loadExpression(
-                            new FloatExpression(Float.parseFloat(ctx.FLOAT().getText()))
+                            new FloatExpression(Double.parseDouble(ctx.FLOAT().getText()))
                     );
         }
         return null;
@@ -91,8 +91,8 @@ public class ExpressionEvalVisitor extends LuaParserBaseVisitor<Void> {
                 // Обработка массива
                 log.info("Array access detected: {}", ctx.getText());
                 int arrayVarIndex = symbolTable.getLocalVariable(varName).index();
-                new ExpressionBuilder(bytecodeGenerator.getMethodVisitor())
-                        .loadExpression(new VariableExpression(symbol));
+//                new ExpressionBuilder(bytecodeGenerator.getMethodVisitor())
+//                        .loadExpression(new VariableExpression(symbol));
                 visit(ctx.exp(0));
                 bytecodeGenerator.getMethodVisitor().visitInsn(Opcodes.AALOAD);
 
@@ -106,8 +106,8 @@ public class ExpressionEvalVisitor extends LuaParserBaseVisitor<Void> {
                         .getHashMapElement(tableIndex, fieldName);
 //                return new TableAccessExpression(new VariableExpression(symbol), fieldName);
             } else {
-                new ExpressionBuilder(bytecodeGenerator.getMethodVisitor())
-                        .loadExpression(new VariableExpression(symbol));
+//                new ExpressionBuilder(bytecodeGenerator.getMethodVisitor())
+//                        .loadExpression(new VariableExpression(symbol));
 //                return new VariableExpression(symbol);
             }
         } else if (ctx.CP() != null) {
