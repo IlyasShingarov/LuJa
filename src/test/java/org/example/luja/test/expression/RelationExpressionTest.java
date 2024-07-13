@@ -230,4 +230,54 @@ public class RelationExpressionTest {
         assertFalse(Boolean.parseBoolean(lines.get(8)));
         assertTrue(Boolean.parseBoolean(lines.get(9)));
     }
+
+    @Test
+    public void testIntegerLessThanExpression() throws Exception {
+        String luaCode = """
+                print(1 < 1)
+                print(1 < 2)
+                print(2 < 1)
+                print(1 < 1.0)
+                print(1.0 < 1)
+                """;
+
+        byte[] bytecode = executeLuaCode(luaCode);
+        String output = executor.execute(bytecode);
+
+        List<String> lines = output.lines().toList();
+
+        assertFalse(Boolean.parseBoolean(lines.get(0)));
+        assertTrue(Boolean.parseBoolean(lines.get(1)));
+        assertFalse(Boolean.parseBoolean(lines.get(2)));
+        assertFalse(Boolean.parseBoolean(lines.get(3)));
+        assertFalse(Boolean.parseBoolean(lines.get(4)));
+        assertFalse(Boolean.parseBoolean(lines.get(5)));
+    }
+
+    @Test
+    public void testFloatLessThanExpression() throws Exception {
+        String luaCode = """
+                print(1.0 < 1.0)
+                print(1.0 < 2.0)
+                print(2.0 < 1.0)
+                print(1.0 < 1)
+                print(1 < 1.0)
+                """;
+
+        byte[] bytecode = executeLuaCode(luaCode);
+        String output = executor.execute(bytecode);
+
+        List<String> lines = output.lines().toList();
+
+        assertFalse(Boolean.parseBoolean(lines.get(0)));
+        assertTrue(Boolean.parseBoolean(lines.get(1)));
+        assertFalse(Boolean.parseBoolean(lines.get(2)));
+        assertFalse(Boolean.parseBoolean(lines.get(3)));
+        assertFalse(Boolean.parseBoolean(lines.get(4)));
+    }
+
+    @Test
+    public void testStringLessThanExpression() throws Exception {
+
+    }
 }

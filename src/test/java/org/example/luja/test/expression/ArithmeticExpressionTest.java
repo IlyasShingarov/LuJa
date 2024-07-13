@@ -10,6 +10,8 @@ import org.example.luja.LuaBytecodeExecutor;
 import org.example.temp.LuaChunkVisitor;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class ArithmeticExpressionTest {
@@ -147,14 +149,14 @@ public class ArithmeticExpressionTest {
         LuaBytecodeExecutor executor = new LuaBytecodeExecutor();
         String output = executor.execute(bytecode);
 
-        String[] lines = output.split("\n");
+        List<String> lines = output.lines().toList();
 
-        assertEquals(3, Integer.parseInt(lines[0]));
-        assertEquals(3, Integer.parseInt(lines[1]));
-        assertEquals(6, Integer.parseInt(lines[2]));
-        assertEquals(3.0, Double.parseDouble(lines[3]));
-        assertEquals(3, Integer.parseInt(lines[4]));
-        assertEquals(1, Integer.parseInt(lines[5]));
+        assertEquals(3, Integer.parseInt(lines.get(0)), "1 + 2");
+        assertEquals(3, Integer.parseInt(lines.get(1)), "5 - 2");
+        assertEquals(6, Integer.parseInt(lines.get(2)), "2 * 3");
+        assertEquals(3.0, Double.parseDouble(lines.get(3)), "6 / 2");
+        assertEquals(3, Integer.parseInt(lines.get(4)), "7 // 2");
+        assertEquals(1, Integer.parseInt(lines.get(5)), "7 % 2");
     }
 
     @Test
@@ -176,14 +178,14 @@ public class ArithmeticExpressionTest {
         LuaBytecodeExecutor executor = new LuaBytecodeExecutor();
         String output = executor.execute(bytecode);
 
-        String[] lines = output.split("\n");
+        List<String> lines = output.lines().toList();
 
-        assertEquals(3.0, Double.parseDouble(lines[0]));
-        assertEquals(3.0, Double.parseDouble(lines[1]));
-        assertEquals(6.0, Double.parseDouble(lines[2]));
-        assertEquals(3.0, Double.parseDouble(lines[3]));
-        assertEquals(3.0, Double.parseDouble(lines[4]));
-        assertEquals(1.0, Double.parseDouble(lines[5]));
+        assertEquals(3.0, Double.parseDouble(lines.get(0)), "1.0 + 2.0");
+        assertEquals(3.0, Double.parseDouble(lines.get(1)), "5.0 - 2.0");
+        assertEquals(6.0, Double.parseDouble(lines.get(2)), "2.0 * 3.0");
+        assertEquals(3.0, Double.parseDouble(lines.get(3)), "6.0 / 2.0");
+        assertEquals(3.0, Double.parseDouble(lines.get(4)), "7.0 // 2.0");
+        assertEquals(1.0, Double.parseDouble(lines.get(5)), "7.0 % 2.0");
     }
 
     @Test
@@ -207,12 +209,12 @@ public class ArithmeticExpressionTest {
 
         String[] lines = output.split("\n");
 
-        assertEquals(3.0, Double.parseDouble(lines[0]));
-        assertEquals(3.0, Double.parseDouble(lines[1]));
-        assertEquals(6.0, Double.parseDouble(lines[2]));
-        assertEquals(3.0, Double.parseDouble(lines[3]));
-        assertEquals(3.0, Double.parseDouble(lines[4]));
-        assertEquals(1.0, Double.parseDouble(lines[5]));
+        assertEquals(3.0, Double.parseDouble(lines[0]), "1.0 + 2");
+        assertEquals(3.0, Double.parseDouble(lines[1]), "5 - 2.0");
+        assertEquals(6.0, Double.parseDouble(lines[2]), "2.0 * 3");
+        assertEquals(3.0, Double.parseDouble(lines[3]), "6 / 2.0");
+        assertEquals(3.0, Double.parseDouble(lines[4]), "7 // 2.0");
+        assertEquals(1.0, Double.parseDouble(lines[5]), "7.0 % 2");
     }
 
     @Test
@@ -236,12 +238,12 @@ public class ArithmeticExpressionTest {
 
         String[] lines = output.split("\n");
 
-        assertEquals(3.0, Double.parseDouble(lines[0]));
-        assertEquals(3.0, Double.parseDouble(lines[1]));
-        assertEquals(6.0, Double.parseDouble(lines[2]));
-        assertEquals(3.0, Double.parseDouble(lines[3]));
-        assertEquals(3.0, Double.parseDouble(lines[4]));
-        assertEquals(1.0, Double.parseDouble(lines[5]));
+        assertEquals(3.0, Double.parseDouble(lines[0]), "1 + 2.0");
+        assertEquals(3.0, Double.parseDouble(lines[1]), "5.0 - 2");
+        assertEquals(6.0, Double.parseDouble(lines[2]), "2 * 3.0");
+        assertEquals(3.0, Double.parseDouble(lines[3]), "6.0 / 2");
+        assertEquals(3.0, Double.parseDouble(lines[4]), "7 // 2.0");
+        assertEquals(1.0, Double.parseDouble(lines[5]), "7.0 % 2");
     }
 
     @Test
@@ -265,11 +267,11 @@ public class ArithmeticExpressionTest {
 
         String[] lines = output.split("\n");
 
-        assertEquals(9.0, Double.parseDouble(lines[0]));
-        assertEquals(-1.0, Double.parseDouble(lines[1]));
-        assertEquals(3.0, Double.parseDouble(lines[2]));
-        assertEquals(1.0, Double.parseDouble(lines[3]));
-        assertEquals(3.0, Double.parseDouble(lines[4]));
-        assertEquals(1.0, Double.parseDouble(lines[5]));
+        assertEquals(9.0, Double.parseDouble(lines[0]), "(1.0 + 2.0) * 3.0");
+        assertEquals(-1.0, Double.parseDouble(lines[1]), "5.0 - (2.0 * 3.0)");
+        assertEquals(3.0, Double.parseDouble(lines[2]), "2.0 * (3.0 / 2.0)");
+        assertEquals(1.0, Double.parseDouble(lines[3]), "(6.0 / 2.0) // 2.0");
+        assertEquals(3.0, Double.parseDouble(lines[4]), "7.0 // (2.0 % 2.0)");
+        assertEquals(1.0, Double.parseDouble(lines[5]), "7.0 % (2.0 + 1.0)");
     }
 }

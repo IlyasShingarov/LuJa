@@ -49,6 +49,7 @@ public class LuaExpressionVisitor extends LuaParserBaseVisitor<Expression> {
     public Expression visitExp(LuaParser.ExpContext ctx) {
         if (ctx.TRUE() != null) return new BooleanExpression(true);
         if (ctx.FALSE() != null) return new BooleanExpression(false);
+        if (ctx.NIL() != null) return new NilExpression();
         if (ctx.binop() != null) {
             log.info("Binary expression encountered {}", ctx.getText());
             var left = visit(ctx.exp(0));

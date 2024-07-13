@@ -485,6 +485,43 @@ public class OperatorSupport {
     public static Object not_equals(Double a, String b) { return true; }
     public static Object not_equals(String a, Double b) { return true; }
 
+    public static Object less_than(Integer a, Integer b) { return a < b; }
+    public static Object less_than(Double a, Double b) { return a < b; }
+    public static Object less_than(String a, String b) {
+        return a.compareTo(b) < 0;
+    }
+    public static Object less_than(Integer a, Double b) { return a < b; }
+    public static Object less_than(Double a, Integer b) { return a < b; }
+
+    public static Object less_than_or_equals(Integer a, Integer b) { return a <= b; }
+    public static Object less_than_or_equals(Double a, Double b) { return a <= b; }
+    public static Object less_than_or_equals(String a, String b) {
+        return a.compareTo(b) <= 0;
+    }
+    public static Object less_than_or_equals(Integer a, Double b) { return a <= b; }
+    public static Object less_than_or_equals(Double a, Integer b) { return a <= b; }
+
+    public static Object greater_than(Integer a, Integer b) { return a > b; }
+    public static Object greater_than(Double a, Double b) { return a > b; }
+    public static Object greater_than(String a, String b) {
+        return a.compareTo(b) > 0;
+    }
+    public static Object greater_than(Integer a, Double b) { return a > b; }
+    public static Object greater_than(Double a, Integer b) { return a > b; }
+
+    public static Object greater_than_or_equals(Integer a, Integer b) { return a >= b; }
+    public static Object greater_than_or_equals(Double a, Double b) { return a >= b; }
+    public static Object greater_than_or_equals(String a, String b) {
+        return a.compareTo(b) >= 0;
+    }
+    public static Object greater_than_or_equals(Integer a, Double b) { return a >= b; }
+    public static Object greater_than_or_equals(Double a, Integer b) { return a >= b; }
+
+
+
+
+
+
     public static Object add_fallback(Object a, Object b) {
         return reject(a, b, "+");
     }
