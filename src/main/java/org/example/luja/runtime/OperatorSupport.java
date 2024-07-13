@@ -1,6 +1,7 @@
 package org.example.luja.runtime;
 
 import java.lang.invoke.*;
+import java.util.Objects;
 
 import static java.lang.invoke.MethodHandles.*;
 import static java.lang.invoke.MethodType.methodType;
@@ -102,7 +103,7 @@ public class OperatorSupport {
         return callSite;
     }
 
-
+// ARITHMETIC =========================================================================================================
     public static Object add(Integer a, Integer b) { return a + b; }
     public static Object add(Double a, Double b) { return a + b; }
     public static Object add(String a, String b) {
@@ -283,11 +284,217 @@ public class OperatorSupport {
         }
     }
 
+    public static Object divide(Integer a, Integer b) { return a.doubleValue() / b.doubleValue(); }
+    public static Object divide(Double a, Double b) { return a / b; }
+    public static Object divide(Integer a, Double b) { return a.doubleValue() / b; }
+    public static Object divide(Double a, Integer b) { return a / b.doubleValue(); }
+    public static Object divide(String a, String b) {
+        try {
+            return Integer.parseInt(a) / Integer.parseInt(b);
+        } catch (NumberFormatException e) {
+            try {
+                return Double.parseDouble(a) / Double.parseDouble(b);
+            } catch (NumberFormatException e1) {
+                return reject(a, b, "/");
+            }
+        }
+    }
+    public static Object divide(String a, Integer b) {
+        try {
+            return Integer.parseInt(a) / b;
+        } catch (NumberFormatException e) {
+            try {
+                return Double.parseDouble(a) / b;
+            } catch (NumberFormatException e1) {
+                return reject(a, b, "/");
+            }
+        }
+    }
+    public static Object divide(Integer a, String b) {
+        try {
+            return a / Integer.parseInt(b);
+        } catch (NumberFormatException e) {
+            try {
+                return a / Double.parseDouble(b);
+            } catch (NumberFormatException e1) {
+                return reject(a, b, "/");
+            }
+        }
+    }
+    public static Object divide(Double a, String b) {
+        try {
+            return a / Integer.parseInt(b);
+        } catch (NumberFormatException e) {
+            try {
+                return a / Double.parseDouble(b);
+            } catch (NumberFormatException e1) {
+                return reject(a, b, "/");
+            }
+        }
+    }
+    public static Object divide(String a, Double b) {
+        try {
+            return Integer.parseInt(a) / b;
+        } catch (NumberFormatException e) {
+            try {
+                return Double.parseDouble(a) / b;
+            } catch (NumberFormatException e1) {
+                return reject(a, b, "/");
+            }
+        }
+    }
+
+    public static Object divide_floor(Integer a, Integer b) { return a / b; }
+    public static Object divide_floor(Double a, Double b) { return (int) (a / b); }
+    public static Object divide_floor(Integer a, Double b) { return (int) (a / b); }
+    public static Object divide_floor(Double a, Integer b) { return (int) (a / b); }
+    public static Object divide_floor(String a, String b) {
+        try {
+            return Integer.parseInt(a) / Integer.parseInt(b);
+        } catch (NumberFormatException e) {
+            try {
+                return (int) (Double.parseDouble(a) / Double.parseDouble(b));
+            } catch (NumberFormatException e1) {
+                return reject(a, b, "//");
+            }
+        }
+    }
+    public static Object divide_floor(String a, Integer b) {
+        try {
+            return Integer.parseInt(a) / b;
+        } catch (NumberFormatException e) {
+            try {
+                return (int) (Double.parseDouble(a) / b);
+            } catch (NumberFormatException e1) {
+                return reject(a, b, "//");
+            }
+        }
+    }
+    public static Object divide_floor(Integer a, String b) {
+        try {
+            return a / Integer.parseInt(b);
+        } catch (NumberFormatException e) {
+            try {
+                return (int) (a / Double.parseDouble(b));
+            } catch (NumberFormatException e1) {
+                return reject(a, b, "//");
+            }
+        }
+    }
+    public static Object divide_floor(Double a, String b) {
+        try {
+            return (int) (a / Integer.parseInt(b));
+        } catch (NumberFormatException e) {
+            try {
+                return (int) (a / Double.parseDouble(b));
+            } catch (NumberFormatException e1) {
+                return reject(a, b, "//");
+            }
+        }
+    }
+    public static Object divide_floor(String a, Double b) {
+        try {
+            return Integer.parseInt(a) / b;
+        } catch (NumberFormatException e) {
+            try {
+                return (int) (Double.parseDouble(a) / b);
+            } catch (NumberFormatException e1) {
+                return reject(a, b, "//");
+            }
+        }
+    }
+
+    public static Object modulo(Integer a, Integer b) { return a % b; }
+    public static Object modulo(Double a, Double b) { return a % b; }
+    public static Object modulo(Integer a, Double b) { return a % b; }
+    public static Object modulo(Double a, Integer b) { return a % b; }
+    public static Object modulo(String a, String b) {
+        try {
+            return Integer.parseInt(a) % Integer.parseInt(b);
+        } catch (NumberFormatException e) {
+            try {
+                return Double.parseDouble(a) % Double.parseDouble(b);
+            } catch (NumberFormatException e1) {
+                return reject(a, b, "%");
+            }
+        }
+    }
+    public static Object modulo(String a, Integer b) {
+        try {
+            return Integer.parseInt(a) % b;
+        } catch (NumberFormatException e) {
+            try {
+                return Double.parseDouble(a) % b;
+            } catch (NumberFormatException e1) {
+                return reject(a, b, "%");
+            }
+        }
+    }
+    public static Object modulo(Integer a, String b) {
+        try {
+            return a % Integer.parseInt(b);
+        } catch (NumberFormatException e) {
+            try {
+                return a % Double.parseDouble(b);
+            } catch (NumberFormatException e1) {
+                return reject(a, b, "%");
+            }
+        }
+    }
+    public static Object modulo(Double a, String b) {
+        try {
+            return a % Integer.parseInt(b);
+        } catch (NumberFormatException e) {
+            try {
+                return a % Double.parseDouble(b);
+            } catch (NumberFormatException e1) {
+                return reject(a, b, "%");
+            }
+        }
+    }
+    public static Object modulo(String a, Double b) {
+        try {
+            return Integer.parseInt(a) % b;
+        } catch (NumberFormatException e) {
+            try {
+                return Double.parseDouble(a) % b;
+            } catch (NumberFormatException e1) {
+                return reject(a, b, "%");
+            }
+        }
+    }
+
+// RELATION ============================================================================================================
+    public static Object equals(Integer a, Integer b) { return a.equals(b); }
+    public static Object equals(Double a, Double b) { return a.equals(b); }
+    public static Object equals(String a, String b) { return a.equals(b); }
+    public static Object equals(Integer a, Double b) { return false; }
+    public static Object equals(Double a, Integer b) { return false; }
+    public static Object equals(String a, Integer b) { return false; }
+    public static Object equals(Integer a, String b) { return false; }
+    public static Object equals(Double a, String b) { return false; }
+    public static Object equals(String a, Double b) { return false; }
+
+    public static Object not_equals(Integer a, Integer b) { return !a.equals(b); }
+    public static Object not_equals(Double a, Double b) { return !a.equals(b); }
+    public static Object not_equals(String a, String b) { return !a.equals(b); }
+    public static Object not_equals(Integer a, Double b) { return true; }
+    public static Object not_equals(Double a, Integer b) { return true; }
+    public static Object not_equals(String a, Integer b) { return true; }
+    public static Object not_equals(Integer a, String b) { return true; }
+    public static Object not_equals(Double a, String b) { return true; }
+    public static Object not_equals(String a, Double b) { return true; }
+
 
     public static Object add_fallback(Object a, Object b) {
         return reject(a, b, "+");
     }
-
+    public static Object equals_fallback(Object a, Object b) {
+        return Objects.equals(a, b);
+    }
+    public static Object not_equals_fallback(Object a, Object b) {
+        return !Objects.equals(a, b);
+    }
 
     private static Object reject(Object a, String symbol) throws IllegalArgumentException {
         throw new IllegalArgumentException(

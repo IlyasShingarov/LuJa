@@ -11,11 +11,13 @@ public enum BinaryOperation implements Opcodes {
     MODULO("%"),
     DIVIDE_FLOOR("//"),
     EQUALS("=="),
-    NOT_EQUALS("!="),
+    NOT_EQUALS("~="),
     LESS_THAN("<"),
     LESS_THAN_OR_EQUALS("<="),
     GREATER_THAN(">"),
-    GREATER_THAN_OR_EQUALS(">=");
+    GREATER_THAN_OR_EQUALS(">="),
+    AND("and"),
+    OR("or");
 
     private final String symbol;
 
