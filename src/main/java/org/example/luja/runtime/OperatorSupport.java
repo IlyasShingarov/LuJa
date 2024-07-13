@@ -485,7 +485,6 @@ public class OperatorSupport {
     public static Object not_equals(Double a, String b) { return true; }
     public static Object not_equals(String a, Double b) { return true; }
 
-
     public static Object add_fallback(Object a, Object b) {
         return reject(a, b, "+");
     }
@@ -494,6 +493,14 @@ public class OperatorSupport {
     }
     public static Object not_equals_fallback(Object a, Object b) {
         return !Objects.equals(a, b);
+    }
+
+    public static Object and_fallback(Object a, Object b) {
+        return a == null || a.equals(false) ? a : b;
+    }
+
+    public static Object or_fallback(Object a, Object b) {
+        return a != null && !a.equals(false) ? a : b;
     }
 
     private static Object reject(Object a, String symbol) throws IllegalArgumentException {

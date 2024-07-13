@@ -1,4 +1,4 @@
-package org.example.luja.expression;
+package org.example.luja.test.expression;
 
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.CharStreams;

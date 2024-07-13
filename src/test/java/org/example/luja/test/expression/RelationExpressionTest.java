@@ -1,4 +1,4 @@
-package org.example.luja.expression;
+package org.example.luja.test.expression;
 
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.CharStreams;
@@ -16,11 +16,19 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class RelationExpressionTest {
+    private final LuaBytecodeExecutor executor = new LuaBytecodeExecutor();
+
     private ParseTree createParseTree(String code) {
         CharStream input = CharStreams.fromString(code);
         LuaLexer lexer = new LuaLexer(input);
         LuaParser parser = new LuaParser(new CommonTokenStream(lexer));
         return parser.start_();
+    }
+
+    private byte[] executeLuaCode(String luaCode) throws Exception {
+        LuaChunkVisitor chunkVisitor = new LuaChunkVisitor();
+        chunkVisitor.visit(createParseTree(luaCode));
+        return chunkVisitor.getBytecodeGenerator().toByteArray();
     }
 
     @Test
@@ -30,12 +38,7 @@ public class RelationExpressionTest {
                 print(1 == 2)
                 """;
 
-        ParseTree parseTree = createParseTree(luaCode);
-        LuaChunkVisitor visitor = new LuaChunkVisitor();
-        visitor.visit(parseTree);
-
-        byte[] bytecode = visitor.getBytecodeGenerator().toByteArray();
-        LuaBytecodeExecutor executor = new LuaBytecodeExecutor();
+        byte[] bytecode = executeLuaCode(luaCode);
         String output = executor.execute(bytecode);
 
         List<String> lines = output.lines().toList();
@@ -51,12 +54,7 @@ public class RelationExpressionTest {
                 print(1.0 == 2.0)
                 """;
 
-        ParseTree parseTree = createParseTree(luaCode);
-        LuaChunkVisitor visitor = new LuaChunkVisitor();
-        visitor.visit(parseTree);
-
-        byte[] bytecode = visitor.getBytecodeGenerator().toByteArray();
-        LuaBytecodeExecutor executor = new LuaBytecodeExecutor();
+        byte[] bytecode = executeLuaCode(luaCode);
         String output = executor.execute(bytecode);
 
         List<String> lines = output.lines().toList();
@@ -72,12 +70,7 @@ public class RelationExpressionTest {
                 print("hello" == "world")
                 """;
 
-        ParseTree parseTree = createParseTree(luaCode);
-        LuaChunkVisitor visitor = new LuaChunkVisitor();
-        visitor.visit(parseTree);
-
-        byte[] bytecode = visitor.getBytecodeGenerator().toByteArray();
-        LuaBytecodeExecutor executor = new LuaBytecodeExecutor();
+        byte[] bytecode = executeLuaCode(luaCode);
         String output = executor.execute(bytecode);
 
         List<String> lines = output.lines().toList();
@@ -95,12 +88,7 @@ public class RelationExpressionTest {
                 print(false == true)
                 """;
 
-        ParseTree parseTree = createParseTree(luaCode);
-        LuaChunkVisitor visitor = new LuaChunkVisitor();
-        visitor.visit(parseTree);
-
-        byte[] bytecode = visitor.getBytecodeGenerator().toByteArray();
-        LuaBytecodeExecutor executor = new LuaBytecodeExecutor();
+        byte[] bytecode = executeLuaCode(luaCode);
         String output = executor.execute(bytecode);
 
         List<String> lines = output.lines().toList();
@@ -126,12 +114,7 @@ public class RelationExpressionTest {
                 print("hello" == "world")
                 """;
 
-        ParseTree parseTree = createParseTree(luaCode);
-        LuaChunkVisitor visitor = new LuaChunkVisitor();
-        visitor.visit(parseTree);
-
-        byte[] bytecode = visitor.getBytecodeGenerator().toByteArray();
-        LuaBytecodeExecutor executor = new LuaBytecodeExecutor();
+        byte[] bytecode = executeLuaCode(luaCode);
         String output = executor.execute(bytecode);
 
         List<String> lines = output.lines().toList();
@@ -155,12 +138,7 @@ public class RelationExpressionTest {
                 print(1 ~= 2)
                 """;
 
-        ParseTree parseTree = createParseTree(luaCode);
-        LuaChunkVisitor visitor = new LuaChunkVisitor();
-        visitor.visit(parseTree);
-
-        byte[] bytecode = visitor.getBytecodeGenerator().toByteArray();
-        LuaBytecodeExecutor executor = new LuaBytecodeExecutor();
+        byte[] bytecode = executeLuaCode(luaCode);
         String output = executor.execute(bytecode);
 
         List<String> lines = output.lines().toList();
@@ -176,12 +154,7 @@ public class RelationExpressionTest {
                 print(1.0 ~= 2.0)
                 """;
 
-        ParseTree parseTree = createParseTree(luaCode);
-        LuaChunkVisitor visitor = new LuaChunkVisitor();
-        visitor.visit(parseTree);
-
-        byte[] bytecode = visitor.getBytecodeGenerator().toByteArray();
-        LuaBytecodeExecutor executor = new LuaBytecodeExecutor();
+        byte[] bytecode = executeLuaCode(luaCode);
         String output = executor.execute(bytecode);
 
         List<String> lines = output.lines().toList();
@@ -197,12 +170,7 @@ public class RelationExpressionTest {
                 print("hello" ~= "world")
                 """;
 
-        ParseTree parseTree = createParseTree(luaCode);
-        LuaChunkVisitor visitor = new LuaChunkVisitor();
-        visitor.visit(parseTree);
-
-        byte[] bytecode = visitor.getBytecodeGenerator().toByteArray();
-        LuaBytecodeExecutor executor = new LuaBytecodeExecutor();
+        byte[] bytecode = executeLuaCode(luaCode);
         String output = executor.execute(bytecode);
 
         List<String> lines = output.lines().toList();
@@ -220,12 +188,7 @@ public class RelationExpressionTest {
                 print(false ~= true)
                 """;
 
-        ParseTree parseTree = createParseTree(luaCode);
-        LuaChunkVisitor visitor = new LuaChunkVisitor();
-        visitor.visit(parseTree);
-
-        byte[] bytecode = visitor.getBytecodeGenerator().toByteArray();
-        LuaBytecodeExecutor executor = new LuaBytecodeExecutor();
+        byte[] bytecode = executeLuaCode(luaCode);
         String output = executor.execute(bytecode);
 
         List<String> lines = output.lines().toList();
@@ -251,12 +214,7 @@ public class RelationExpressionTest {
                 print("hello" ~= "world")
                 """;
 
-        ParseTree parseTree = createParseTree(luaCode);
-        LuaChunkVisitor visitor = new LuaChunkVisitor();
-        visitor.visit(parseTree);
-
-        byte[] bytecode = visitor.getBytecodeGenerator().toByteArray();
-        LuaBytecodeExecutor executor = new LuaBytecodeExecutor();
+        byte[] bytecode = executeLuaCode(luaCode);
         String output = executor.execute(bytecode);
 
         List<String> lines = output.lines().toList();
