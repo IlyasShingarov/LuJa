@@ -132,10 +132,10 @@ public class StatementVisitor extends LuaParserBaseVisitor<Statement> {
             log.info("Visiting condition: {}", ctx.exp(i).getText());
             LuaParser.ExpContext expContext = ctx.exp(i);
             LuaParser.BlockContext blockContext = ctx.block(i);
-            conditions.add(new Condition(
-                    expressionVisitor.visit(expContext),
-                    () -> visit(blockContext)
-            ));
+//            conditions.add(new Condition(
+//                    expressionVisitor.visit(expContext),
+//                    () -> visit(blockContext)
+//            ));
         }
 
         // Формируем блок else

@@ -109,7 +109,7 @@ public class LuaBytecodeGenerator implements Opcodes {
             mv.visitJumpInsn(Opcodes.IFEQ, nextLabel);
 
             // Выполнение тела блока, если условие истинно
-            condition.blockGenerator().run();
+//            condition.blockGenerator().run();
 
             // Переход к концу всех условий
             mv.visitJumpInsn(Opcodes.GOTO, endLabel);

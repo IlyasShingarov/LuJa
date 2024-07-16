@@ -5,18 +5,20 @@ import lombok.extern.slf4j.Slf4j;
 import org.example.antlr.LuaParser;
 import org.example.antlr.LuaParserBaseVisitor;
 import org.example.builtin.FunctionUtil;
+import org.example.domain.Condition;
+import org.example.domain.expression.BinaryExpression;
 import org.example.domain.expression.Expression;
 import org.example.luja.compiler.symbol.ContextManager;
 import org.example.luja.compiler.symbol.LuaSymbolMetatype;
 import org.example.luja.compiler.symbol.LuaVariable;
+import org.objectweb.asm.Label;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
-import org.objectweb.asm.tree.AbstractInsnNode;
-import org.objectweb.asm.tree.FieldInsnNode;
-import org.objectweb.asm.tree.InsnList;
-import org.objectweb.asm.tree.VarInsnNode;
+import org.objectweb.asm.tree.*;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Supplier;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -33,6 +35,59 @@ public class StatementVisitor extends LuaParserBaseVisitor<InsnList> implements 
     }
 
     @Override
+    public InsnList visitIfstat(LuaParser.IfstatContext ctx) {
+        log.info("Visiting if statement {}", ctx.getText());
+
+        // Формирование условий
+        List<Condition> conditions = new ArrayList<>(ctx.exp().size());
+        for (int i = 0; i < ctx.exp().size(); i++) {
+            Expression conditionExression = new LuaExpressionVisitor(contextManager).visit(ctx.exp(i));
+            LuaParser.BlockContext block = ctx.block(i);
+            conditions.add(new Condition(
+                    conditionExression,
+                    () -> visit(block)
+            ));
+        }
+
+        // Формирование блока else
+        Supplier<InsnList> elseBlock = ctx.block().size() > ctx.exp().size()
+                ? () -> visit(ctx.block(ctx.block().size() - 1))
+                : null;
+
+        InsnList instructions = generateIfStatement(conditions, elseBlock);
+
+        return instructions;
+    }
+
+    private InsnList generateIfStatement(List<Condition> conditions, Supplier<InsnList> elseBlock) {
+        InsnList instructions = new InsnList();
+
+        // Метка для конца всех условий
+        LabelNode endLabel = new LabelNode();
+
+        for (Condition condition : conditions) {
+            LabelNode nextLabel = new LabelNode();
+
+            if (condition.condition() instanceof BinaryExpression binaryExpression) {
+                // Вычисление условия. На стеке остается значение либо true, либо false
+                codeGen.getClassBuilder().loadExpressionOntoStack(binaryExpression, instructions);
+                instructions.add(new TypeInsnNode(CHECKCAST, "java/lang/Boolean"));
+                instructions.add(new MethodInsnNode(INVOKEVIRTUAL, "java/lang/Boolean", "booleanValue", "()Z", false));
+            }
+
+            instructions.add(new JumpInsnNode(Opcodes.IFEQ, nextLabel));
+            instructions.add(condition.blockGenerator().get());
+            instructions.add(new JumpInsnNode(Opcodes.GOTO, endLabel));
+            instructions.add(nextLabel);
+        }
+
+        if (elseBlock != null) { instructions.add(elseBlock.get()); }
+
+        instructions.add(endLabel);
+        return instructions;
+    }
+
+    @Override
     public InsnList visitFunctioncall(LuaParser.FunctioncallContext ctx) {
         log.info("Visiting functioncall {}", ctx.getText());
         InsnList instructions = new InsnList();
@@ -43,7 +98,6 @@ public class StatementVisitor extends LuaParserBaseVisitor<InsnList> implements 
 
         instructions.add((FunctionUtil.getFunction(functionName).get()));
         return instructions;
-//        return super.visitFunctioncall(ctx);
     }
 
     @Override
@@ -77,5 +131,17 @@ public class StatementVisitor extends LuaParserBaseVisitor<InsnList> implements 
         return instructions;
 
 //        return super.visitVardecl(ctx);
+    }
+
+    @Override
+    public InsnList visitBlock(LuaParser.BlockContext ctx) {
+        InsnList insnNodes = new InsnList();
+        for (LuaParser.StatContext statContext : ctx.stat()) {
+            insnNodes.add(visit(statContext));
+        }
+        if (ctx.retstat() != null) {
+            insnNodes.add(visit(ctx.retstat()));
+        }
+        return insnNodes;
     }
 }

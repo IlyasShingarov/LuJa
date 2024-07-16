@@ -70,7 +70,8 @@ public class LuaChunkVisitor extends LuaParserBaseVisitor<Void> {
 
         gen.getCurrentMethod().instructions().add(instructions);
 
-        return super.visitStat(ctx);
+        return null;
+//        return super.visitStat(ctx);
     }
 
     public CodeGen getBytecodeGenerator() {
