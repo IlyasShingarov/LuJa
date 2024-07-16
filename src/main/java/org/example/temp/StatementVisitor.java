@@ -8,14 +8,17 @@ import org.example.builtin.FunctionUtil;
 import org.example.domain.Condition;
 import org.example.domain.expression.BinaryExpression;
 import org.example.domain.expression.Expression;
+import org.example.domain.expression.constant.IntegerExpression;
 import org.example.luja.compiler.symbol.ContextManager;
 import org.example.luja.compiler.symbol.LuaSymbolMetatype;
 import org.example.luja.compiler.symbol.LuaVariable;
+import org.example.symbol.VariableSymbol;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.*;
 
+import java.lang.invoke.MethodType;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
@@ -54,9 +57,7 @@ public class StatementVisitor extends LuaParserBaseVisitor<InsnList> implements 
                 ? () -> visit(ctx.block(ctx.block().size() - 1))
                 : null;
 
-        InsnList instructions = generateIfStatement(conditions, elseBlock);
-
-        return instructions;
+        return generateIfStatement(conditions, elseBlock);
     }
 
     private InsnList generateIfStatement(List<Condition> conditions, Supplier<InsnList> elseBlock) {
@@ -86,6 +87,129 @@ public class StatementVisitor extends LuaParserBaseVisitor<InsnList> implements 
         instructions.add(endLabel);
         return instructions;
     }
+
+    @Override
+    public InsnList visitWhileloop(LuaParser.WhileloopContext ctx) {
+        Expression condition = new LuaExpressionVisitor(contextManager).visit(ctx.exp());
+        return generateWhileLoop(condition, () -> visit(ctx.block()));
+    }
+
+    private InsnList generateWhileLoop(Expression condition, Supplier<InsnList> blockGenerator) {
+        InsnList instructions = new InsnList();
+
+        LabelNode startLabel = new LabelNode();
+        LabelNode endLabel = new LabelNode();
+
+        instructions.add(startLabel);
+        codeGen.getClassBuilder().loadExpressionOntoStack(condition, instructions);
+        instructions.add(new TypeInsnNode(CHECKCAST, "java/lang/Boolean"));
+        instructions.add(new MethodInsnNode(INVOKEVIRTUAL, "java/lang/Boolean", "booleanValue", "()Z", false));
+        instructions.add(new JumpInsnNode(Opcodes.IFEQ, endLabel));
+        instructions.add(blockGenerator.get());
+        instructions.add(new JumpInsnNode(Opcodes.GOTO, startLabel));
+        instructions.add(endLabel);
+
+        return instructions;
+    }
+
+    @Override
+    public InsnList visitForloop(LuaParser.ForloopContext ctx) {
+        InsnList instructions = new InsnList();
+        String counterName = ctx.NAME().getText() + "_counter";
+        String limitName = ctx.NAME().getText() + "_limit";
+        String stepName = ctx.NAME().getText() + "_step";
+        contextManager.addVariable(ctx.NAME().getText());
+        contextManager.addVariable(counterName);
+        contextManager.addVariable(limitName);
+        contextManager.addVariable(stepName);
+
+        Expression startExpression = new LuaExpressionVisitor(contextManager).visit(ctx.exp(0));
+        Expression endExpression = new LuaExpressionVisitor(contextManager).visit(ctx.exp(1));
+        Expression stepExpression = ctx.exp().size() > 2
+                ? new LuaExpressionVisitor(contextManager).visit(ctx.exp(2))
+                : new IntegerExpression( 1);
+
+
+        LuaVariable counterVar = contextManager.getCurrentScope().getVariable(counterName);
+        codeGen.getClassBuilder().loadExpressionOntoStack(startExpression, instructions);
+        instructions.add(new VarInsnNode(ASTORE, counterVar.index()));
+
+        LuaVariable limitVar = contextManager.getCurrentScope().getVariable(limitName);
+        codeGen.getClassBuilder().loadExpressionOntoStack(endExpression, instructions);
+        instructions.add(new VarInsnNode(ASTORE, limitVar.index()));
+
+        LuaVariable stepVar = contextManager.getCurrentScope().getVariable(stepName);
+        codeGen.getClassBuilder().loadExpressionOntoStack(stepExpression, instructions);
+        instructions.add(new VarInsnNode(ASTORE, stepVar.index()));
+
+        instructions.add(generateForLoop(
+                counterVar, limitVar, stepVar,
+                () -> visit(ctx.block())
+        ));
+
+        return instructions;
+    }
+
+    private InsnList generateForLoop(LuaVariable counterVar, LuaVariable limitVar, LuaVariable stepVar, Supplier<InsnList> blockGenerator) {
+        InsnList instructions = new InsnList();
+
+        LabelNode startLabel = new LabelNode();
+        LabelNode endLabel = new LabelNode();
+
+        instructions.add(startLabel);
+        instructions.add(new VarInsnNode(ALOAD, counterVar.index()));
+        instructions.add(new VarInsnNode(ALOAD, limitVar.index()));
+        instructions.add(codeGen.getClassBuilder().makeInvokeDynamic("less_than_or_equals"));
+        instructions.add(new TypeInsnNode(CHECKCAST, "java/lang/Boolean"));
+        instructions.add(new MethodInsnNode(INVOKEVIRTUAL, "java/lang/Boolean", "booleanValue", "()Z", false));
+        instructions.add(new JumpInsnNode(Opcodes.IFEQ, endLabel));
+
+        LuaVariable counter = contextManager.getCurrentScope().getVariable(counterVar.name().substring(0, counterVar.name().length() - 8));
+        instructions.add(new VarInsnNode(ALOAD, counterVar.index()));
+        instructions.add(new VarInsnNode(ASTORE, counter.index()));
+        instructions.add(blockGenerator.get());
+
+        instructions.add(new VarInsnNode(ALOAD, counterVar.index()));
+        instructions.add(new VarInsnNode(ALOAD, stepVar.index()));
+        instructions.add(codeGen.getClassBuilder().makeInvokeDynamic("add"));
+        instructions.add(new VarInsnNode(ASTORE, counterVar.index()));
+        instructions.add(new JumpInsnNode(Opcodes.GOTO, startLabel));
+        instructions.add(endLabel);
+
+        return instructions;
+    }
+
+//        // Генерация кода инициализации
+//        if (init != null) {
+//            loadLocalVariable(init.index(), init.type().getDescriptor());
+//            mv.visitVarInsn(Opcodes.ISTORE, init.index());
+//        }
+//
+//        // Метка начала цикла (условие)
+//        mv.visitLabel(startLoop);
+//
+//        // Генерация кода условия и проверки
+//        if (limit != null) {
+//            loadLocalVariable(init.index(), Type.INT_TYPE.getDescriptor());
+//            loadLocalVariable(limit.index(), limit.type().getDescriptor());
+//            mv.visitJumpInsn(Opcodes.IF_ICMPGT, endLoop); // Переход к метке конца, если условие ложно
+//        }
+//
+//        // Генерация тела цикла
+//        bodyGenerator.run();
+//
+//        // Обновление переменной
+//        loadLocalVariable(init.index(), Type.INT_TYPE.getDescriptor());
+//        mv.visitLdcInsn(1); // Пока шаг только 1
+//        mv.visitInsn(Opcodes.IADD);
+//        mv.visitVarInsn(Opcodes.ISTORE, init.index());
+//
+//        // Переход к началу цикла (условие)
+//        mv.visitJumpInsn(Opcodes.GOTO, startLoop);
+//
+//        // Метка конца цикла
+//        mv.visitLabel(endLoop);
+//    }
 
     @Override
     public InsnList visitFunctioncall(LuaParser.FunctioncallContext ctx) {

@@ -52,6 +52,17 @@ public class ClassBuilder implements Opcodes {
         this.staticFields = new ArrayList<>();
     }
 
+    public InsnList makeInvokeDynamic(String name) {
+        InsnList instructions = new InsnList();
+        instructions.add(new InvokeDynamicInsnNode(
+                name,
+                MethodType.genericMethodType(2).toMethodDescriptorString(),
+                OPERATOR_HANDLE, (Integer) 2
+                )
+        );
+        return instructions;
+    }
+
     public MethodBuilder newMethod(int access, String name, String desc) {
         MethodNode methodNode = new MethodNode(access, name, desc, null, null);
         methodNodes.add(methodNode);

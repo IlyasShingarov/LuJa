@@ -18,6 +18,10 @@ public record ScopeManager(
         return globalScope.getVariable(name);
     }
 
+    public void addVariable(VariableSymbol variableSymbol) {
+//        localScopes.get(localScopes.size() - 1).declare();
+    }
+
     public boolean isGlobal(String name) {
         return globalScope.isDeclared(name);
     }

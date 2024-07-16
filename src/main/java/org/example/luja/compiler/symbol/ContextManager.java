@@ -11,9 +11,11 @@ public class ContextManager {
     private LuaSymbolTable luaSymbolTable;
     private Stack<LuaScope> currentScopeStack = new Stack<>();
     private int currentScopeDepth = 1;
+    private int currentLocalIndex;
 
     public ContextManager(LuaSymbolTable luaSymbolTable) {
         this.luaSymbolTable = luaSymbolTable;
+        this.currentLocalIndex = luaSymbolTable.getCurrentLocalIndex();
     }
 
     public void setLuaSymbolTable(LuaSymbolTable luaSymbolTable) {
@@ -28,6 +30,10 @@ public class ContextManager {
 
     public ScopeManager getCurrentScope() {
         return new ScopeManager(luaSymbolTable.getGlobalScope(), currentScopeStack);
+    }
+
+    public void addVariable(String name) {
+        currentScopeStack.peek().declare(new LuaVariable(name, currentLocalIndex++, LuaSymbolMetatype.LOCAL, false));
     }
 
     public void exitScope() {

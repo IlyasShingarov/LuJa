@@ -112,121 +112,121 @@ public class StatementVisitor extends LuaParserBaseVisitor<Statement> {
         return null;
     }
 
-    @Override
-    public Statement visitWhileloop(LuaParser.WhileloopContext ctx) {
-        log.info("Visiting while loop {}", ctx.getText());
-        Expression condition = expressionVisitor.visit(ctx.exp());
-
-        bytecodeGenerator.generateWhileLoop(condition, () -> visit(ctx.block()));
-
-        return null;
-    }
-
-    @Override
-    public Statement visitIfstat(LuaParser.IfstatContext ctx) {
-        log.info("Visiting if statement {}", ctx.getText());
-
-        // Формируем условия
-        List<Condition> conditions = new ArrayList<>();
-        for (int i = 0; i < ctx.exp().size(); i++) {
-            log.info("Visiting condition: {}", ctx.exp(i).getText());
-            LuaParser.ExpContext expContext = ctx.exp(i);
-            LuaParser.BlockContext blockContext = ctx.block(i);
-//            conditions.add(new Condition(
-//                    expressionVisitor.visit(expContext),
-//                    () -> visit(blockContext)
-//            ));
-        }
-
-        // Формируем блок else
-        Runnable elseBlock = ctx.block().size() > ctx.exp().size()
-                ? () -> visit(ctx.block(ctx.block().size() - 1))
-                : null;
-
-        bytecodeGenerator.generateIfElseStatement(conditions, elseBlock);
-
-        return null;
-    }
-
-    @Override
-    public Statement visitFunctioncall(LuaParser.FunctioncallContext ctx) {
-        log.info("Visiting function call");
-        if (ctx.NAME() != null && ctx.NAME(0).getText().equals("print")) {
-            log.info("Encountered print statement");
-            var arg  = ctx.args().explist().exp(0);
-            Expression text = arg.accept(expressionVisitor);
-            if (text instanceof VariableExpression var) {
-//                log.info("Printing variable: {}", var.symbol());
-//                bytecodeGenerator.generatePrint(var.symbol());
-//                bytecodeGenerator.generatePrint(text);
-                return null;
-            }
-
-            Type type = expressionTypeVisitor.visit(ctx.args().explist().exp(0));
-            expressionEvalVisitor.visit(ctx.args().explist());
-            bytecodeGenerator.printStackValue(type);
-//            if (text instanceof VariableExpression var) {
-//                log.info("Printing variable: {}", var.symbol());
-//                bytecodeGenerator.generatePrint(var.symbol());
-//            } else {
-//                bytecodeGenerator.generatePrint(text);
-//            }
-        } else if (ctx.NAME(0) != null && ctx.NAME(1) != null) {
-            if (ctx.NAME(0).getText().equals("io") && ctx.NAME(1).getText().equals("read")) {
-                Expression arg = ctx.args().explist().exp(0).accept(expressionVisitor);
-                StringExpression type = (StringExpression) arg;
-                bytecodeGenerator.generateIoRead(type.value());
-            }
-        } else {
-            String functionName = ctx.NAME(0).getText();
-            log.info("Function name: {}", functionName);
-            List<Expression> arguments = new ArrayList<>();
-            if (ctx.args().explist() != null) {
-                arguments = ctx.args().explist().exp().stream()
-                        .map(exp -> exp.accept(expressionVisitor))
-                        .toList();
-            }
-            log.info("Arguments: {}", arguments);
-            new FunctionCallBuilder(bytecodeGenerator.getMethodVisitor())
-                    .putArguments(arguments)
-                    .forgetArguments()
-                    .callFunction(symbolTable.getFunction(functionName));
-        }
-
-        return null;
-    }
-
-    @Override
-    public Statement visitFuncdecl(LuaParser.FuncdeclContext ctx) {
-        return null;
-    }
-
-    @Override
-    public Statement visitRetstat(LuaParser.RetstatContext ctx) {
-        if (ctx.explist() != null) {
-//            List<Expression> returnValues = ctx.explist().exp().stream()
-//                    .map(exp -> exp.accept(expressionVisitor))
-//                    .toList();
+//    @Override
+//    public Statement visitWhileloop(LuaParser.WhileloopContext ctx) {
+//        log.info("Visiting while loop {}", ctx.getText());
+//        Expression condition = expressionVisitor.visit(ctx.exp());
 //
-//            Expression returnValue = returnValues.getFirst();
-            Type returnType = expressionTypeVisitor.visit(ctx.explist().exp(0));
-            expressionEvalVisitor.visit(ctx.explist().exp(0));
-            new ExpressionBuilder(bytecodeGenerator.getMethodVisitor())
-//                    .loadExpression(returnValue)
-                    .addReturn(returnType);
-        } else {
-            new ExpressionBuilder(bytecodeGenerator.getMethodVisitor())
-                    .addReturn(Type.VOID_TYPE);
-        }
-        return null;
-    }
+//        bytecodeGenerator.generateWhileLoop(condition, () -> visit(ctx.block()));
+//
+//        return null;
+//    }
 
-    @Override
-    public Statement visitBlock(LuaParser.BlockContext ctx) {
-        ctx.stat().forEach(this::visit);
-        if (ctx.retstat() != null) {
-            visit(ctx.retstat());
-        }
-        return null;
-    }
+//    @Override
+//    public Statement visitIfstat(LuaParser.IfstatContext ctx) {
+//        log.info("Visiting if statement {}", ctx.getText());
+//
+//        // Формируем условия
+//        List<Condition> conditions = new ArrayList<>();
+//        for (int i = 0; i < ctx.exp().size(); i++) {
+//            log.info("Visiting condition: {}", ctx.exp(i).getText());
+//            LuaParser.ExpContext expContext = ctx.exp(i);
+//            LuaParser.BlockContext blockContext = ctx.block(i);
+////            conditions.add(new Condition(
+////                    expressionVisitor.visit(expContext),
+////                    () -> visit(blockContext)
+////            ));
+//        }
+//
+//        // Формируем блок else
+//        Runnable elseBlock = ctx.block().size() > ctx.exp().size()
+//                ? () -> visit(ctx.block(ctx.block().size() - 1))
+//                : null;
+//
+//        bytecodeGenerator.generateIfElseStatement(conditions, elseBlock);
+//
+//        return null;
+//    }
+
+//    @Override
+//    public Statement visitFunctioncall(LuaParser.FunctioncallContext ctx) {
+//        log.info("Visiting function call");
+//        if (ctx.NAME() != null && ctx.NAME(0).getText().equals("print")) {
+//            log.info("Encountered print statement");
+//            var arg  = ctx.args().explist().exp(0);
+//            Expression text = arg.accept(expressionVisitor);
+//            if (text instanceof VariableExpression var) {
+////                log.info("Printing variable: {}", var.symbol());
+////                bytecodeGenerator.generatePrint(var.symbol());
+////                bytecodeGenerator.generatePrint(text);
+//                return null;
+//            }
+//
+//            Type type = expressionTypeVisitor.visit(ctx.args().explist().exp(0));
+//            expressionEvalVisitor.visit(ctx.args().explist());
+//            bytecodeGenerator.printStackValue(type);
+////            if (text instanceof VariableExpression var) {
+////                log.info("Printing variable: {}", var.symbol());
+////                bytecodeGenerator.generatePrint(var.symbol());
+////            } else {
+////                bytecodeGenerator.generatePrint(text);
+////            }
+//        } else if (ctx.NAME(0) != null && ctx.NAME(1) != null) {
+//            if (ctx.NAME(0).getText().equals("io") && ctx.NAME(1).getText().equals("read")) {
+//                Expression arg = ctx.args().explist().exp(0).accept(expressionVisitor);
+//                StringExpression type = (StringExpression) arg;
+//                bytecodeGenerator.generateIoRead(type.value());
+//            }
+//        } else {
+//            String functionName = ctx.NAME(0).getText();
+//            log.info("Function name: {}", functionName);
+//            List<Expression> arguments = new ArrayList<>();
+//            if (ctx.args().explist() != null) {
+//                arguments = ctx.args().explist().exp().stream()
+//                        .map(exp -> exp.accept(expressionVisitor))
+//                        .toList();
+//            }
+//            log.info("Arguments: {}", arguments);
+//            new FunctionCallBuilder(bytecodeGenerator.getMethodVisitor())
+//                    .putArguments(arguments)
+//                    .forgetArguments()
+//                    .callFunction(symbolTable.getFunction(functionName));
+//        }
+//
+//        return null;
+//    }
+
+//    @Override
+//    public Statement visitFuncdecl(LuaParser.FuncdeclContext ctx) {
+//        return null;
+//    }
+
+//    @Override
+//    public Statement visitRetstat(LuaParser.RetstatContext ctx) {
+//        if (ctx.explist() != null) {
+////            List<Expression> returnValues = ctx.explist().exp().stream()
+////                    .map(exp -> exp.accept(expressionVisitor))
+////                    .toList();
+////
+////            Expression returnValue = returnValues.getFirst();
+//            Type returnType = expressionTypeVisitor.visit(ctx.explist().exp(0));
+//            expressionEvalVisitor.visit(ctx.explist().exp(0));
+//            new ExpressionBuilder(bytecodeGenerator.getMethodVisitor())
+////                    .loadExpression(returnValue)
+//                    .addReturn(returnType);
+//        } else {
+//            new ExpressionBuilder(bytecodeGenerator.getMethodVisitor())
+//                    .addReturn(Type.VOID_TYPE);
+//        }
+//        return null;
+//    }
+
+//    @Override
+//    public Statement visitBlock(LuaParser.BlockContext ctx) {
+//        ctx.stat().forEach(this::visit);
+//        if (ctx.retstat() != null) {
+//            visit(ctx.retstat());
+//        }
+//        return null;
+//    }
 }

@@ -351,57 +351,57 @@ public class LuaBytecodeGenerator implements Opcodes {
         mv.visitLabel(endLoop);
     }
 
-    public void generateWhileLoop(Expression condition, Runnable bodyGenerator) {
-        // Метка для начала цикла (условие)
-        Label startLoop = new Label();
-        // Метка для конца цикла
-        Label endLoop = new Label();
+//    public void generateWhileLoop(Expression condition, Runnable bodyGenerator) {
+//        // Метка для начала цикла (условие)
+//        Label startLoop = new Label();
+//        // Метка для конца цикла
+//        Label endLoop = new Label();
+//
+//        // Метка начала цикла (условие)
+//        mv.visitLabel(startLoop);
+//
+////        // Генерация кода условия и проверки
+////        if (condition instanceof BooleanExpression booleanExpr) {
+////            mv.visitLdcInsn(booleanExpr.value());
+////            mv.visitJumpInsn(Opcodes.IFEQ, endLoop);
+////        } else if (condition instanceof VariableExpression varExpr) {
+////            VariableSymbol symbol = varExpr.symbol();
+////            mv.visitVarInsn(Opcodes.ILOAD, symbol.index());
+////            mv.visitJumpInsn(Opcodes.IFEQ, endLoop);
+////        } else if (condition instanceof BinaryExpression binaryExpr) {
+////            generateComparison(binaryExpr.left(), binaryExpr.right(), binaryExpr.operation());
+////            mv.visitJumpInsn(Opcodes.IFEQ, endLoop);
+////        }
+//
+//        // Генерация тела цикла
+//        bodyGenerator.run();
+//
+//        // Переход к началу цикла (условие)
+//        mv.visitJumpInsn(Opcodes.GOTO, startLoop);
+//
+//        // Метка конца цикла
+//        mv.visitLabel(endLoop);
+//    }
 
-        // Метка начала цикла (условие)
-        mv.visitLabel(startLoop);
 
-//        // Генерация кода условия и проверки
-//        if (condition instanceof BooleanExpression booleanExpr) {
-//            mv.visitLdcInsn(booleanExpr.value());
-//            mv.visitJumpInsn(Opcodes.IFEQ, endLoop);
-//        } else if (condition instanceof VariableExpression varExpr) {
-//            VariableSymbol symbol = varExpr.symbol();
-//            mv.visitVarInsn(Opcodes.ILOAD, symbol.index());
-//            mv.visitJumpInsn(Opcodes.IFEQ, endLoop);
-//        } else if (condition instanceof BinaryExpression binaryExpr) {
-//            generateComparison(binaryExpr.left(), binaryExpr.right(), binaryExpr.operation());
-//            mv.visitJumpInsn(Opcodes.IFEQ, endLoop);
+//    public void generatePrint(VariableSymbol symbol) {
+//        mv.visitFieldInsn(Opcodes.GETSTATIC, "java/lang/System", "out", "Ljava/io/PrintStream;");
+//        switch (symbol.metatype()) {
+//            case "global" -> mv.visitFieldInsn(Opcodes.GETSTATIC, "GeneratedClass", symbol.name(), symbol.type().getDescriptor());
+//            case "local", "counter", "parameter" -> loadLocalVariable(symbol.index(), symbol.type().getDescriptor());
 //        }
+//        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/io/PrintStream", "println",
+//                "(%s)V".formatted(symbol.type().getDescriptor()), false);
+//    }
+//
+//    public void printStackValue(Type type) {
+//        mv.visitFieldInsn(Opcodes.GETSTATIC, "java/lang/System", "out", "Ljava/io/PrintStream;");
+//        mv.visitInsn(Opcodes.SWAP);
+//        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/io/PrintStream", "println",
+//                "(%s)V".formatted(type.getDescriptor()), false);
+//    }
 
-        // Генерация тела цикла
-        bodyGenerator.run();
-
-        // Переход к началу цикла (условие)
-        mv.visitJumpInsn(Opcodes.GOTO, startLoop);
-
-        // Метка конца цикла
-        mv.visitLabel(endLoop);
-    }
-
-
-    public void generatePrint(VariableSymbol symbol) {
-        mv.visitFieldInsn(Opcodes.GETSTATIC, "java/lang/System", "out", "Ljava/io/PrintStream;");
-        switch (symbol.metatype()) {
-            case "global" -> mv.visitFieldInsn(Opcodes.GETSTATIC, "GeneratedClass", symbol.name(), symbol.type().getDescriptor());
-            case "local", "counter", "parameter" -> loadLocalVariable(symbol.index(), symbol.type().getDescriptor());
-        }
-        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/io/PrintStream", "println",
-                "(%s)V".formatted(symbol.type().getDescriptor()), false);
-    }
-
-    public void printStackValue(Type type) {
-        mv.visitFieldInsn(Opcodes.GETSTATIC, "java/lang/System", "out", "Ljava/io/PrintStream;");
-        mv.visitInsn(Opcodes.SWAP);
-        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/io/PrintStream", "println",
-                "(%s)V".formatted(type.getDescriptor()), false);
-    }
-
-    public void printStackValue() {
+//    public void printStackValue() {
 //        Label labelInteger = new Label();
 //        Label labelFloat = new Label();
 //        Label labelBoolean = new Label();
@@ -472,13 +472,13 @@ public class LuaBytecodeGenerator implements Opcodes {
 //        mv.visitFieldInsn(Opcodes.GETSTATIC, "java/lang/System", "out", "Ljava/io/PrintStream;");
 //        mv.visitInsn(Opcodes.SWAP);
 //        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/io/PrintStream", "println", "(I)V", false);
-    }
-
-    public void generatePrint(Expression expression) {
-        mv.visitFieldInsn(Opcodes.GETSTATIC, "java/lang/System", "out", "Ljava/io/PrintStream;");
-        loadOperand(expression);
-        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/io/PrintStream", "println", "(I)V", false);
-    }
+//    }
+//
+//    public void generatePrint(Expression expression) {
+//        mv.visitFieldInsn(Opcodes.GETSTATIC, "java/lang/System", "out", "Ljava/io/PrintStream;");
+//        loadOperand(expression);
+//        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/io/PrintStream", "println", "(I)V", false);
+//    }
 
     public void generateIoRead(String type) {
         // Creating new BufferedReader(System.in)

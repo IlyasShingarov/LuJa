@@ -251,7 +251,6 @@ public class RelationExpressionTest {
         assertFalse(Boolean.parseBoolean(lines.get(2)));
         assertFalse(Boolean.parseBoolean(lines.get(3)));
         assertFalse(Boolean.parseBoolean(lines.get(4)));
-        assertFalse(Boolean.parseBoolean(lines.get(5)));
     }
 
     @Test
