@@ -8,9 +8,6 @@ import org.antlr.v4.runtime.tree.ParseTree;
 import org.example.antlr.LuaLexer;
 import org.example.antlr.LuaParser;
 import org.example.bytecode.LuaBytecodeGenerator;
-import org.example.parser.ChunkVisitor;
-import org.example.parser.global.GlobalFunctionDeclarationVisitor;
-import org.example.parser.global.GlobalVariableDeclarationVisitor;
 import org.example.temp.LuaChunkVisitor;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
@@ -26,12 +23,6 @@ public class Main implements CommandLineRunner {
     public static void main(String[] args) {
         SpringApplication.run(Main.class, args);
     }
-
-//    private final GlobalVariableDeclarationVisitor globalVariableDeclarationVisitor;
-//    private final GlobalFunctionDeclarationVisitor globalFunctionDeclarationVisitor;
-
-//    private final ChunkVisitor chunkVisitor;
-//    private final LuaBytecodeGenerator bytecodeGenerator;
 
     @Override
     public void run(String... args) throws Exception {
@@ -53,19 +44,9 @@ public class Main implements CommandLineRunner {
         LuaChunkVisitor chunkVisitor = new LuaChunkVisitor();
         chunkVisitor.visit(tree);
 
-//        bytecodeGenerator.generateMainMethod();
-
-//        tree.accept(globalVariableDeclarationVisitor);
-//        tree.accept(globalFunctionDeclarationVisitor);
-
-//        tree.accept(chunkVisitor);
-
-//        bytecodeGenerator.generateExitMain();
         byte[] bytecode = chunkVisitor.getBytecodeGenerator().toByteArray();
         try (var fos = new java.io.FileOutputStream("src/main/resources/GeneratedClass.class")) {
             fos.write(bytecode);
         }
-//
-//        log.info("Compiler finished");
     }
 }

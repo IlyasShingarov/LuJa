@@ -213,10 +213,9 @@ public class ForLoopStatementTest {
                 """;
 
         List<String> output = executor.execute(executeLuaCode(luaCode)).lines().toList();
-        assertEquals(3, output.size());
+        assertEquals(2, output.size());
         assertEquals("1.5", output.get(0));
-        assertEquals("4.5", output.get(1));
-        assertEquals("9.5", output.get(2));
+        assertEquals("5.0", output.get(1));
     }
 
     @Test

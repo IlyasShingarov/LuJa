@@ -6,14 +6,11 @@ import org.antlr.v4.runtime.tree.ParseTree;
 import org.example.antlr.LuaParser;
 import org.example.antlr.LuaParserBaseVisitor;
 import org.example.domain.expression.Expression;
-import org.example.domain.expression.constant.IntegerExpression;
 import org.example.domain.statement.StaticField;
-import org.example.luja.compiler.symbol.ContextManager;
-import org.example.luja.compiler.symbol.LuaSymbolTable;
+import org.example.luja.compiler.symbol.MainContextManager;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.FieldNode;
-import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -23,7 +20,7 @@ import java.util.List;
 public class GlobalVariableVisitor extends LuaParserBaseVisitor<List<StaticField>> implements Opcodes {
 
     private final List<StaticField> fields = new ArrayList<>();
-    private final ContextManager contextManager;
+    private final MainContextManager contextManager;
 
     @Override
     public List<StaticField> visitChunk(LuaParser.ChunkContext ctx) {

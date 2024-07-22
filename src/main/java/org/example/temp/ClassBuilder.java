@@ -2,10 +2,7 @@ package org.example.temp;
 
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import org.example.domain.expression.BinaryExpression;
-import org.example.domain.expression.BinaryOperation;
-import org.example.domain.expression.Expression;
-import org.example.domain.expression.VariableExpression;
+import org.example.domain.expression.*;
 import org.example.domain.expression.constant.BooleanExpression;
 import org.example.domain.expression.constant.FloatExpression;
 import org.example.domain.expression.constant.IntegerExpression;
@@ -158,6 +155,18 @@ public class ClassBuilder implements Opcodes {
                         MethodType.genericMethodType(2).toMethodDescriptorString(),
                         OPERATOR_HANDLE, (Integer) 2
                         )
+                );
+            }
+            case FunctionExpression expr -> {
+                String functionDescriptor = "(%s)%s".formatted(
+                        String.join("", expr.arguments().stream().map(p -> "Ljava/lang/Object;").toList()),
+                        "Ljava/lang/Object;");
+                for (Expression arg : expr.arguments()) {
+                    loadExpressionOntoStack(arg, instructions);
+                }
+                // invokestatic
+                instructions.add(new MethodInsnNode(INVOKESTATIC,
+                        classNode.name, expr.name(), functionDescriptor, false)
                 );
             }
             default -> throw new IllegalArgumentException("Unsupported expression type: " + expression);

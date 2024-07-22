@@ -7,16 +7,16 @@ import java.util.List;
 
 public record FunctionExpression(
         String name,
-        FunctionSymbol functionSymbol,
+//        FunctionSymbol functionSymbol,
         List<Expression> arguments
 ) implements Expression {
     @Override
     public Type getType() {
-        return functionSymbol.type();
+        return Type.getType(Object.class);
     }
 
     @Override
     public boolean hasVariableExpression() {
-        return false;
+        return true;
     }
 }

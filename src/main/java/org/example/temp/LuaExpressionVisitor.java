@@ -4,14 +4,13 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.example.antlr.LuaParser;
 import org.example.antlr.LuaParserBaseVisitor;
-import org.example.domain.expression.BinaryExpression;
-import org.example.domain.expression.BinaryOperation;
-import org.example.domain.expression.Expression;
-import org.example.domain.expression.VariableExpression;
+import org.example.domain.expression.*;
 import org.example.domain.expression.constant.*;
 import org.example.luja.compiler.symbol.ContextManager;
+import org.example.luja.compiler.symbol.MainContextManager;
 import org.example.luja.compiler.symbol.LuaVariable;
-import org.example.symbol.VariableSymbol;
+
+import java.util.List;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -60,11 +59,25 @@ public class LuaExpressionVisitor extends LuaParserBaseVisitor<Expression> {
 
     @Override
     public Expression visitPrefixexp(LuaParser.PrefixexpContext ctx) {
-        if (ctx.NAME() != null && ctx.NAME().size() == 1) {
+        if (ctx.NAME() != null && ctx.NAME().size() == 1) { // Variable expression
             log.info("Variable expression encountered {}", ctx.NAME(0).getText());
+            log.info("Current scope: {}", contextManager.getCurrentScope());
             LuaVariable variable = contextManager.getCurrentScope().getVariable(ctx.NAME(0).getText());
             return new VariableExpression(variable);
+        } else if (ctx.NAME() != null && ctx.NAME().size() == 2) { // Function call
+            log.info("Function call encountered {}", ctx.NAME(0).getText());
+            return visit(ctx.functioncall());
         }
         return super.visitPrefixexp(ctx);
+    }
+
+    @Override
+    public Expression visitFunctioncall(LuaParser.FunctioncallContext ctx) {
+        List<Expression> arguments = ctx.args().explist().exp().stream()
+                .map(this::visit)
+                .toList();
+
+        String functionName = ctx.NAME(0).getText();
+        return new FunctionExpression(functionName, arguments);
     }
 }

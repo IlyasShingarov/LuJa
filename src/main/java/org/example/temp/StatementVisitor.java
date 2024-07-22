@@ -8,17 +8,15 @@ import org.example.builtin.FunctionUtil;
 import org.example.domain.Condition;
 import org.example.domain.expression.BinaryExpression;
 import org.example.domain.expression.Expression;
+import org.example.domain.expression.FunctionExpression;
 import org.example.domain.expression.constant.IntegerExpression;
 import org.example.luja.compiler.symbol.ContextManager;
-import org.example.luja.compiler.symbol.LuaSymbolMetatype;
+import org.example.luja.compiler.symbol.MainContextManager;
 import org.example.luja.compiler.symbol.LuaVariable;
-import org.example.symbol.VariableSymbol;
-import org.objectweb.asm.Label;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.*;
 
-import java.lang.invoke.MethodType;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
@@ -114,6 +112,7 @@ public class StatementVisitor extends LuaParserBaseVisitor<InsnList> implements 
 
     @Override
     public InsnList visitForloop(LuaParser.ForloopContext ctx) {
+        contextManager.enterScope();
         InsnList instructions = new InsnList();
         String counterName = ctx.NAME().getText() + "_counter";
         String limitName = ctx.NAME().getText() + "_limit";
@@ -147,6 +146,7 @@ public class StatementVisitor extends LuaParserBaseVisitor<InsnList> implements 
                 () -> visit(ctx.block())
         ));
 
+        contextManager.exitScope();
         return instructions;
     }
 
@@ -216,11 +216,24 @@ public class StatementVisitor extends LuaParserBaseVisitor<InsnList> implements 
         log.info("Visiting functioncall {}", ctx.getText());
         InsnList instructions = new InsnList();
         String functionName = ctx.NAME().getFirst().getText();
-        List<Expression> expressions = ctx.args().explist().exp().stream()
-                .map(exp -> new LuaExpressionVisitor(contextManager).visit(exp)).toList();
-        expressions.forEach(exp -> codeGen.getClassBuilder().loadExpressionOntoStack(exp, instructions));
+        LuaParser.ExplistContext explist = ctx.args().explist();
+        List<Expression> expressions = new ArrayList<>();
+        if (explist != null) {
+            expressions = explist.exp().stream()
+                    .map(exp -> new LuaExpressionVisitor(contextManager).visit(exp)).toList();
+        }
 
-        instructions.add((FunctionUtil.getFunction(functionName).get()));
+        try {
+            InsnList functionCode = FunctionUtil.getFunction(functionName).get();
+            expressions.forEach(exp -> codeGen.getClassBuilder().loadExpressionOntoStack(exp, instructions));
+            instructions.add(functionCode);
+        } catch (Exception e) {
+            log.warn("Function is not builtin");
+            codeGen.getClassBuilder().loadExpressionOntoStack(
+                    new FunctionExpression(functionName, expressions),
+                    instructions
+            );
+        }
         return instructions;
     }
 
@@ -267,5 +280,31 @@ public class StatementVisitor extends LuaParserBaseVisitor<InsnList> implements 
             insnNodes.add(visit(ctx.retstat()));
         }
         return insnNodes;
+    }
+
+    @Override
+    public InsnList visitRetstat(LuaParser.RetstatContext ctx) {
+        InsnList instructions = new InsnList();
+        if (ctx.explist() != null) {
+            Expression expression = new LuaExpressionVisitor(contextManager).visit(ctx.explist().exp(0));
+            codeGen.getClassBuilder().loadExpressionOntoStack(expression, instructions);
+        } else {
+            instructions.add(new InsnNode(ACONST_NULL));
+        }
+        instructions.add(new InsnNode(ARETURN));
+        return instructions;
+    }
+
+    @Override
+    public InsnList visitFuncdecl(LuaParser.FuncdeclContext ctx) {
+        // If method does not exist throw an error
+        codeGen.getClassBuilder().getClassNode().methods.stream()
+                .filter(m -> m.name.equals(ctx.funcname().getText()))
+                .findFirst()
+                .ifPresentOrElse(
+                    methodNode -> log.info("Method {} already exists", ctx.funcname().getText()),
+                    () -> log.info("Method {} does not exist", ctx.funcname().getText())
+                );
+        return new InsnList();
     }
 }

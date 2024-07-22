@@ -11,7 +11,7 @@ public class LuaSymbolTable {
 
     private final LuaScope globalScope = new LuaScope(0);
     private final Stack<LuaScope> localScopes = new Stack<>();
-    private final Map<String, LuaScope> functionScopes = new HashMap<>();
+    private final Map<String, Stack<LuaScope>> functionScopes = new HashMap<>();
     private final Deque<LuaScope> allScopes = new ArrayDeque<>();
     private int currentLocalIndex = 0;
 
@@ -40,16 +40,16 @@ public class LuaSymbolTable {
         }
     }
 
-    public void declareFunctionScope(String name) {
-        var scope = localScopes.peek();
-        functionScopes.put(name, scope);
-    }
+//    public void declareFunctionScope(String name) {
+//        var scope = localScopes.peek();
+//        functionScopes.put(name, scope);
+//    }
 
-    public void exitFunctionScope(String name) {
-        allScopes.remove(functionScopes.get(name));
-    }
+//    public void exitFunctionScope(String name) {
+//        allScopes.remove(functionScopes.get(name));
+//    }
 
-    public LuaScope getFunctionScope(String name) {
+    public Stack<LuaScope> getFunctionScope(String name) {
         return functionScopes.get(name);
     }
 

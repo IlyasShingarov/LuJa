@@ -1,20 +1,13 @@
-
--- a = 10;
--- b = 2.3;
-
-local a = 1;
-local b = 2.0;
-local c = true;
-local d = false;
-local e = "Hello";
-
-print(a);
-print(b);
-print(c);
-print(d);
-print(e);
-
---
+function test(a, b)
+    local sum = 0
+    for i = a, b do
+        print(sum)
+        print(i)
+        sum = sum + i
+    end
+    return sum
+end
+print(test(1, 10))
 -- a = 10
 -- b = 2.4
 -- c = "Hello world"

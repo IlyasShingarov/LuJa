@@ -6,6 +6,8 @@ import org.example.antlr.LuaParser;
 import org.example.antlr.LuaParserBaseVisitor;
 import org.example.luja.compiler.symbol.LuaSymbolTable;
 
+import java.util.Stack;
+
 @Slf4j
 public class SymbolVisitor extends LuaParserBaseVisitor<LuaSymbolTable> {
 
@@ -34,12 +36,6 @@ public class SymbolVisitor extends LuaParserBaseVisitor<LuaSymbolTable> {
 
     @Override
     public LuaSymbolTable visitFuncdecl(LuaParser.FuncdeclContext ctx) {
-        String functionName = ctx.funcname().getText();
-        symbolTable.enterScope();
-        symbolTable.declareFunctionScope(functionName);
-        super.visitFuncdecl(ctx);
-        symbolTable.exitScope();
-        symbolTable.exitFunctionScope(functionName);
         return null;
     }
 
@@ -66,14 +62,14 @@ public class SymbolVisitor extends LuaParserBaseVisitor<LuaSymbolTable> {
         return null;
     }
 
-    @Override
-    public LuaSymbolTable visitFuncbody(LuaParser.FuncbodyContext ctx) {
-        ctx.parlist().namelist().NAME().stream()
-                .map(ParseTree::getText)
-                .forEach(symbolTable::declareLocal);
-        visitChildren(ctx);
-        return null;
-    }
+//    @Override
+//    public LuaSymbolTable visitFuncbody(LuaParser.FuncbodyContext ctx) {
+//        ctx.parlist().namelist().NAME().stream()
+//                .map(ParseTree::getText)
+//                .forEach(symbolTable::declareLocal);
+//        visitChildren(ctx);
+//        return null;
+//    }
 
     @Override
     public LuaSymbolTable visitVardecl(LuaParser.VardeclContext ctx) {

@@ -3,12 +3,14 @@ package org.example.luja.compiler.symbol;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.ToString;
+import lombok.extern.slf4j.Slf4j;
 import org.example.symbol.FunctionSymbol;
 import org.example.symbol.VariableSymbol;
 
 import java.util.HashMap;
 import java.util.Map;
 
+@Slf4j
 @Getter
 @ToString
 @EqualsAndHashCode
@@ -22,6 +24,7 @@ public class LuaScope {
     }
 
     public void declare(LuaVariable variable) {
+        log.info("Declaring variable {}", variable);
         variables.put(variable.name(), variable);
     }
 
