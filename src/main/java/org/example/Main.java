@@ -7,7 +7,6 @@ import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.example.antlr.LuaLexer;
 import org.example.antlr.LuaParser;
-import org.example.bytecode.LuaBytecodeGenerator;
 import org.example.temp.LuaChunkVisitor;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
