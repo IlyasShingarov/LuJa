@@ -2,17 +2,13 @@ package org.example.domain.expression;
 
 import org.objectweb.asm.Type;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-public record TableExpression(
-        List<FieldExpression> fields,
-        int size
+public record FieldExpression(
+        Expression object,
+        Object fieldName
 ) implements Expression {
     @Override
     public Type getType() {
-        return Type.getType(HashMap.class);
+        return null;
     }
 
     @Override

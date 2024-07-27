@@ -3,10 +3,7 @@ package org.example.temp;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.example.domain.expression.*;
-import org.example.domain.expression.constant.BooleanExpression;
-import org.example.domain.expression.constant.FloatExpression;
-import org.example.domain.expression.constant.IntegerExpression;
-import org.example.domain.expression.constant.StringExpression;
+import org.example.domain.expression.constant.*;
 import org.example.domain.statement.StaticField;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Handle;
@@ -16,6 +13,7 @@ import org.objectweb.asm.tree.*;
 
 import java.lang.invoke.*;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 @Slf4j
@@ -168,6 +166,31 @@ public class ClassBuilder implements Opcodes {
                 instructions.add(new MethodInsnNode(INVOKESTATIC,
                         classNode.name, expr.name(), functionDescriptor, false)
                 );
+            }
+            case TableExpression expr -> {
+                instructions.add(new TypeInsnNode(NEW, "java/util/HashMap"));
+                instructions.add(new InsnNode(DUP));
+                instructions.add(new MethodInsnNode(INVOKESPECIAL, "java/util/HashMap", "<init>", "()V", false));
+            }
+            case TableAccessExpression expr -> {
+                loadExpressionOntoStack(expr.table(), instructions);
+                int depth = 0;
+                for (Expression key : expr.key()) {
+                    switch (key) {
+                        case ConstantExpression constexpr -> loadExpressionOntoStack(
+                                new StringExpression(constexpr.value().toString()),
+                                instructions
+                        );
+                        case VariableExpression varexpr -> loadExpressionOntoStack(varexpr, instructions);
+                        default -> throw new IllegalStateException("Unexpected value: " + expr.key());
+                    }
+                    instructions.add(new MethodInsnNode(INVOKEVIRTUAL, "java/util/HashMap", "get", "(Ljava/lang/Object;)Ljava/lang/Object;", false));
+                    depth++;
+                    if (depth < expr.key().size()) {
+                        // If there are more keys to process, we expect a nested table
+                        instructions.add(new TypeInsnNode(CHECKCAST, "java/util/HashMap"));
+                    }
+                }
             }
             default -> throw new IllegalArgumentException("Unsupported expression type: " + expression);
         }

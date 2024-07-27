@@ -6,10 +6,9 @@ import org.example.antlr.LuaParser;
 import org.example.antlr.LuaParserBaseVisitor;
 import org.example.builtin.FunctionUtil;
 import org.example.domain.Condition;
-import org.example.domain.expression.BinaryExpression;
-import org.example.domain.expression.Expression;
-import org.example.domain.expression.FunctionExpression;
+import org.example.domain.expression.*;
 import org.example.domain.expression.constant.IntegerExpression;
+import org.example.domain.expression.constant.StringExpression;
 import org.example.luja.compiler.symbol.ContextManager;
 import org.example.luja.compiler.symbol.MainContextManager;
 import org.example.luja.compiler.symbol.LuaVariable;
@@ -263,6 +262,24 @@ public class StatementVisitor extends LuaParserBaseVisitor<InsnList> implements 
             case LOCAL -> {
                 codeGen.getClassBuilder().loadExpressionOntoStack(expression, instructions);
                 instructions.add(new VarInsnNode(ASTORE, variable.index()));
+                if (expression instanceof TableExpression expr) {
+                    for (FieldExpression field : expr.fields()) {
+                        instructions.add(new VarInsnNode(ALOAD, variable.index()));
+                        codeGen.getClassBuilder().loadExpressionOntoStack(new StringExpression(field.fieldName().toString()), instructions);
+                        codeGen.getClassBuilder().loadExpressionOntoStack(field.object(), instructions);
+                        if (field.object() instanceof TableExpression tableExpression) {
+                            for (FieldExpression innerField : tableExpression.fields()) {
+                                instructions.add(new InsnNode(DUP));
+                                codeGen.getClassBuilder().loadExpressionOntoStack(new StringExpression(innerField.fieldName().toString()), instructions);
+                                codeGen.getClassBuilder().loadExpressionOntoStack(innerField.object(), instructions);
+                                instructions.add(new MethodInsnNode(INVOKEVIRTUAL, "java/util/HashMap", "put", "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;"));
+                                instructions.add(new InsnNode(POP));
+                            }
+                        }
+                        instructions.add(new MethodInsnNode(INVOKEVIRTUAL, "java/util/HashMap", "put", "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;"));
+                        instructions.add(new InsnNode(POP));
+                    }
+                }
             }
         }
         return instructions;

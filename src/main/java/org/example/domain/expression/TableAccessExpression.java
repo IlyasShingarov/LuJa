@@ -2,9 +2,11 @@ package org.example.domain.expression;
 
 import org.objectweb.asm.Type;
 
+import java.util.List;
+
 public record TableAccessExpression(
         VariableExpression table,
-        String key
+        List<Expression> key
 ) implements Expression {
     @Override
     public Type getType() {

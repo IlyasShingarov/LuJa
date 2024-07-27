@@ -10,6 +10,7 @@ import org.example.luja.compiler.symbol.ContextManager;
 import org.example.luja.compiler.symbol.MainContextManager;
 import org.example.luja.compiler.symbol.LuaVariable;
 
+import java.util.HashMap;
 import java.util.List;
 
 @Slf4j
@@ -59,7 +60,14 @@ public class LuaExpressionVisitor extends LuaParserBaseVisitor<Expression> {
 
     @Override
     public Expression visitPrefixexp(LuaParser.PrefixexpContext ctx) {
-        if (ctx.NAME() != null && ctx.NAME().size() == 1) { // Variable expression
+        if (ctx.NAME() != null && ctx.OB() != null && !ctx.OB().isEmpty()) { // Table constructor
+            log.info("Table access encountered {}", ctx.NAME(0).getText());
+            LuaVariable tableVariable = contextManager.getCurrentScope().getVariable(ctx.NAME(0).getText());
+            List<Expression> keys = ctx.exp().stream()
+                    .map(this::visit)
+                    .toList();
+            return new TableAccessExpression(new VariableExpression(tableVariable), keys);
+        } else if (ctx.NAME() != null && ctx.NAME().size() == 1) { // Variable expression
             log.info("Variable expression encountered {}", ctx.NAME(0).getText());
             log.info("Current scope: {}", contextManager.getCurrentScope());
             LuaVariable variable = contextManager.getCurrentScope().getVariable(ctx.NAME(0).getText());
@@ -79,5 +87,35 @@ public class LuaExpressionVisitor extends LuaParserBaseVisitor<Expression> {
 
         String functionName = ctx.NAME(0).getText();
         return new FunctionExpression(functionName, arguments);
+    }
+
+    @Override
+    public Expression visitTableconstructor(LuaParser.TableconstructorContext ctx) {
+        FieldVisitor fieldVisitor = new FieldVisitor();
+        List<FieldExpression> fields = ctx.fieldlist().field().stream()
+                .map(fieldVisitor::visitField).toList();
+
+        log.info("Table constructor fields: {}", fields);
+
+        return new TableExpression(fields, 0);
+    }
+
+    private class FieldVisitor extends LuaParserBaseVisitor<FieldExpression> {
+        private int index = 1;
+
+        @Override
+        public FieldExpression visitField(LuaParser.FieldContext ctx) {
+            if (ctx.NAME() != null) {
+                String name = ctx.NAME().getText();
+                return new FieldExpression(
+                        new LuaExpressionVisitor(contextManager).visit(ctx.exp(0)),
+                        name
+                );
+            }
+            return new FieldExpression(
+                    new LuaExpressionVisitor(contextManager).visit(ctx.exp(0)),
+                    index++
+            );
+        }
     }
 }

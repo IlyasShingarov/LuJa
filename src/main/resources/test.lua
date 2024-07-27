@@ -1,13 +1,19 @@
-function test(a, b)
-    local sum = 0
-    for i = a, b do
-        print(sum)
-        print(i)
-        sum = sum + i
-    end
-    return sum
-end
-print(test(1, 10))
+
+local a = {1, {2, 3}, 4};
+
+print(a[1]);
+print(a[2][1]);
+
+-- function test(a, b)
+--     local sum = 0
+--     for i = a, b do
+--         print(sum)
+--         print(i)
+--         sum = sum + i
+--     end
+--     return sum
+-- end
+-- print(test(1, 10))
 -- a = 10
 -- b = 2.4
 -- c = "Hello world"
