@@ -1,42 +1,22 @@
--- function bubbleSort(arr)
---     local n = 7
---     for i = 1, n do
---         for j = 1, n - i do
---             local nextind = j + 1;
---             if arr[j] > arr[nextind] then
---                 local temp = arr[j]
---                 arr[j] = arr[nextind]
---                 arr[nextind] = temp
---             end
---         end
---     end
---     return arr
--- end
+-- Make a linked list
+local list = {next = nil, value = 1}
 
--- local arr = {64, 34, 25, 12, 22, 11, 90}
---
---
--- print(arr[1 + 2])
+local current = list
+for i = 2, 10 do
+    local new = {next = nil, value = i}
+    current["next"] = new
+    current = current["next"]
+end
 
--- print(arr)
--- arr = bubbleSort(arr)
--- print(arr)
+-- Print the list
+current = list
+print(current)
 
+while current ~= nil do
+    print(current["value"])
+    current = current["next"]
+end
 
-local a = read("n");
-print(a)
-
--- local a = nil;
-
--- local head = {value=1, next=nil}
--- local next = {value=2, next=nil}
--- head["next"] = next;
-
--- head["next"]["next"] = {value=3, next=nil}
--- head["next"]["next"]["next"] = {value=4, next=nil}
-
--- print(head)
-
--- for i = 1, #lst do
---     print(lst[i][1])
+-- while 1 do
+--     print("Hello, world!")
 -- end
