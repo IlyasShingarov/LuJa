@@ -33,7 +33,7 @@ public class LuaChunkVisitor extends LuaParserBaseVisitor<Void> {
         LuaSymbolTable symbolTable = new SymbolVisitor().visit(ctx);
         contextManager = new MainContextManager(symbolTable);
 
-//        ObjectMapper om = new ObjectMapper();
+        ObjectMapper om = new ObjectMapper();
 //        log.info(om.writerWithDefaultPrettyPrinter().writeValueAsString(symbolTable));
 
         log.info("Context collected =================================================");
@@ -44,7 +44,7 @@ public class LuaChunkVisitor extends LuaParserBaseVisitor<Void> {
 
         log.info("Collecting functions ==============================================");
         Map<String, Deque<LuaScope>> functionScopes = new FunctionScopeVisitor(symbolTable).visit(ctx);
-//        log.info(om.writerWithDefaultPrettyPrinter().writeValueAsString(functionScopes));
+        log.info(om.writerWithDefaultPrettyPrinter().writeValueAsString(functionScopes));
         ContextManagerFactory contextManagerFactory = new ContextManagerFactory(symbolTable, functionScopes);
         List<MethodNode> functions = new FunctionVisitor(contextManagerFactory, gen).visit(ctx);
         gen.getClassBuilder().getClassNode().methods.addAll(functions);

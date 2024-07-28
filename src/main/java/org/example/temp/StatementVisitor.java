@@ -64,6 +64,7 @@ public class StatementVisitor extends LuaParserBaseVisitor<InsnList> implements 
         LabelNode endLabel = new LabelNode();
 
         for (Condition condition : conditions) {
+            contextManager.enterScope();
             LabelNode nextLabel = new LabelNode();
 
             if (condition.condition() instanceof BinaryExpression binaryExpression) {
@@ -77,9 +78,14 @@ public class StatementVisitor extends LuaParserBaseVisitor<InsnList> implements 
             instructions.add(condition.blockGenerator().get());
             instructions.add(new JumpInsnNode(Opcodes.GOTO, endLabel));
             instructions.add(nextLabel);
+            contextManager.exitScope();
         }
 
-        if (elseBlock != null) { instructions.add(elseBlock.get()); }
+        if (elseBlock != null) {
+            contextManager.enterScope();
+            instructions.add(elseBlock.get());
+            contextManager.exitScope();
+        }
 
         instructions.add(endLabel);
         return instructions;
@@ -219,7 +225,8 @@ public class StatementVisitor extends LuaParserBaseVisitor<InsnList> implements 
         List<Expression> expressions = new ArrayList<>();
         if (explist != null) {
             expressions = explist.exp().stream()
-                    .map(exp -> new LuaExpressionVisitor(contextManager).visit(exp)).toList();
+                    .map(exp -> new LuaExpressionVisitor(contextManager).visit(exp))
+                    .toList();
         }
 
         try {
@@ -244,48 +251,72 @@ public class StatementVisitor extends LuaParserBaseVisitor<InsnList> implements 
 
         LuaVariable variable;
         if (ctx.LOCAL() != null) {
-            variable = contextManager.getCurrentScope().getVariable(ctx.attnamelist().NAME(0).getText());
+            String varName = ctx.attnamelist().NAME(0).getText();
+            variable = contextManager.getCurrentScope().getVariable(varName);
         } else {
-            variable = contextManager.getCurrentScope().getVariable(ctx.varlist().var(0).NAME().getText());
+            String varName = ctx.varlist().var(0).NAME() != null
+                ? ctx.varlist().var(0).NAME().getText()
+                : ctx.varlist().var(0).prefixexp().NAME(0).getText();
+            variable = contextManager.getCurrentScope().getVariable(varName);
         }
 
-        Expression expression = new LuaExpressionVisitor(contextManager).visit(ctx.explist().exp(0));
-        switch (variable.metaType()) {
-            case GLOBAL -> {
-                if (expression.hasVariableExpression()) {
-                    codeGen.getClassBuilder().loadExpressionOntoStack(expression, instructions);
-                    var classname = codeGen.getClassBuilder().getClassNode().name;
-                    var fieldname = variable.name();
-                    instructions.add(new FieldInsnNode(PUTSTATIC, classname, fieldname, Type.getDescriptor(Object.class)));
+        boolean isTableAccess = false;
+        if (ctx.varlist() != null)
+            isTableAccess = ctx.varlist().var(0).prefixexp() != null
+                    && ctx.varlist().var(0).prefixexp().OB() != null;
+
+        if (/*variable.isTable() ||*/ isTableAccess) {
+            instructions.add(new VarInsnNode(ALOAD, variable.index()));
+            instructions.add(new TypeInsnNode(CHECKCAST, "java/util/HashMap"));
+            log.info("Table access detected {}", ctx.getText());
+//            String fieldName = ctx.varlist().var(0).exp().getText();
+            Expression fieldExpression = new LuaExpressionVisitor(contextManager).visit(ctx.varlist().var(0).exp());
+            codeGen.getClassBuilder().loadExpressionOntoStack(fieldExpression, instructions);
+            instructions.add(new MethodInsnNode(INVOKEVIRTUAL, "java/lang/Object", "toString", "()Ljava/lang/String;"));
+            Expression expression = new LuaExpressionVisitor(contextManager).visit(ctx.explist().exp(0));
+            codeGen.getClassBuilder().loadExpressionOntoStack(expression, instructions);
+            instructions.add(new MethodInsnNode(INVOKEVIRTUAL, "java/util/HashMap", "put", "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;"));
+            instructions.add(new InsnNode(POP));
+        } else {
+            Expression expression = new LuaExpressionVisitor(contextManager).visit(ctx.explist().exp(0));
+            switch (variable.metaType()) {
+                case GLOBAL -> {
+                    if (expression.hasVariableExpression()) {
+                        codeGen.getClassBuilder().loadExpressionOntoStack(expression, instructions);
+                        var classname = codeGen.getClassBuilder().getClassNode().name;
+                        var fieldname = variable.name();
+                        instructions.add(new FieldInsnNode(PUTSTATIC, classname, fieldname, Type.getDescriptor(Object.class)));
+                    }
                 }
-            }
-            case LOCAL -> {
-                codeGen.getClassBuilder().loadExpressionOntoStack(expression, instructions);
-                instructions.add(new VarInsnNode(ASTORE, variable.index()));
-                if (expression instanceof TableExpression expr) {
-                    for (FieldExpression field : expr.fields()) {
-                        instructions.add(new VarInsnNode(ALOAD, variable.index()));
-                        codeGen.getClassBuilder().loadExpressionOntoStack(new StringExpression(field.fieldName().toString()), instructions);
-                        codeGen.getClassBuilder().loadExpressionOntoStack(field.object(), instructions);
-                        if (field.object() instanceof TableExpression tableExpression) {
-                            for (FieldExpression innerField : tableExpression.fields()) {
-                                instructions.add(new InsnNode(DUP));
-                                codeGen.getClassBuilder().loadExpressionOntoStack(new StringExpression(innerField.fieldName().toString()), instructions);
-                                codeGen.getClassBuilder().loadExpressionOntoStack(innerField.object(), instructions);
-                                instructions.add(new MethodInsnNode(INVOKEVIRTUAL, "java/util/HashMap", "put", "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;"));
-                                instructions.add(new InsnNode(POP));
+                case LOCAL -> {
+                    codeGen.getClassBuilder().loadExpressionOntoStack(expression, instructions);
+                    instructions.add(new VarInsnNode(ASTORE, variable.index()));
+                    if (expression instanceof TableExpression expr) {
+                        for (FieldExpression field : expr.fields()) {
+                            instructions.add(new VarInsnNode(ALOAD, variable.index()));
+                            codeGen.getClassBuilder().loadExpressionOntoStack(new StringExpression(field.fieldName().toString()), instructions);
+                            codeGen.getClassBuilder().loadExpressionOntoStack(field.object(), instructions);
+                            if (field.object() instanceof TableExpression tableExpression) {
+                                for (FieldExpression innerField : tableExpression.fields()) {
+                                    instructions.add(new InsnNode(DUP));
+                                    codeGen.getClassBuilder().loadExpressionOntoStack(new StringExpression(innerField.fieldName().toString()), instructions);
+                                    codeGen.getClassBuilder().loadExpressionOntoStack(innerField.object(), instructions);
+                                    instructions.add(new MethodInsnNode(INVOKEVIRTUAL, "java/util/HashMap", "put", "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;"));
+                                    instructions.add(new InsnNode(POP));
+                                }
                             }
+                            instructions.add(new MethodInsnNode(INVOKEVIRTUAL, "java/util/HashMap", "put", "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;"));
+                            instructions.add(new InsnNode(POP));
                         }
-                        instructions.add(new MethodInsnNode(INVOKEVIRTUAL, "java/util/HashMap", "put", "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;"));
-                        instructions.add(new InsnNode(POP));
                     }
                 }
             }
         }
-        return instructions;
 
-//        return super.visitVardecl(ctx);
+
+        return instructions;
     }
+
 
     @Override
     public InsnList visitBlock(LuaParser.BlockContext ctx) {

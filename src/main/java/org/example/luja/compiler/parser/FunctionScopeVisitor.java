@@ -109,7 +109,12 @@ public class FunctionScopeVisitor extends LuaParserBaseVisitor<Map<String, Deque
             } else {
                 log.info("Global variable declaration encountered {}", ctx.getText());
                 ctx.varlist().var().stream()
-                        .map(var -> var.NAME().getText())
+                        .map(var -> {
+                            if (var.NAME() == null) {
+                                return var.prefixexp().NAME(0).getText();
+                            }
+                            return var.NAME().getText();
+                        })
                         .forEach(symbol -> {
                             if (isLocal(symbol)) {
                                 log.error("Variable {} is already declared in the current scope", symbol);

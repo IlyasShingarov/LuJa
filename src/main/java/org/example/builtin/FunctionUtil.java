@@ -1,11 +1,13 @@
 package org.example.builtin;
 
+import lombok.extern.slf4j.Slf4j;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.*;
 
 import java.util.Map;
 import java.util.function.Supplier;
 
+@Slf4j
 public class FunctionUtil implements Opcodes {
 
     private static final Map<String, Supplier<InsnList>> functions = Map.of(
@@ -13,6 +15,7 @@ public class FunctionUtil implements Opcodes {
     );
 
     public static Supplier<InsnList> getFunction(String functionName) {
+        log.info("Getting function: {}", functionName);
         return functions.get(functionName);
     }
 

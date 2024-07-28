@@ -6,7 +6,7 @@ import org.example.antlr.LuaParser;
 import org.example.antlr.LuaParserBaseVisitor;
 import org.example.luja.compiler.symbol.LuaSymbolTable;
 
-import java.util.Stack;
+import java.util.List;
 
 @Slf4j
 public class SymbolVisitor extends LuaParserBaseVisitor<LuaSymbolTable> {
@@ -75,13 +75,28 @@ public class SymbolVisitor extends LuaParserBaseVisitor<LuaSymbolTable> {
     public LuaSymbolTable visitVardecl(LuaParser.VardeclContext ctx) {
         if (ctx.LOCAL() != null) {
             log.info("Local variable declaration encountered {}", ctx.getText());
-            ctx.attnamelist().NAME().stream()
+            List<String> varnames = ctx.attnamelist().NAME().stream()
                     .map(ParseTree::getText)
-                    .forEach(symbolTable::declareLocal);
+                    .toList();
+            List<Boolean> isTable = ctx.explist().exp().stream()
+                    .map(expContext -> expContext.tableconstructor() != null)
+                    .toList();
+            for (int i = 0; i < varnames.size(); i++) {
+                if (isTable.get(i)) {
+                    symbolTable.declareLocal(varnames.get(i), true);
+                } else {
+                    symbolTable.declareLocal(varnames.get(i));
+                }
+            }
         } else {
             log.info("Global variable declaration encountered {}", ctx.getText());
             ctx.varlist().var().stream()
-                    .map(var -> var.NAME().getText())
+                    .map(var -> {
+                        if (var.NAME() == null) {
+                            return var.prefixexp().NAME(0).getText();
+                        }
+                        return var.NAME().getText();
+                    })
                     .forEach(symbol -> {
                         if (symbolTable.isLocal(symbol)) {
                             log.error("Variable {} is already declared in the current scope", symbol);

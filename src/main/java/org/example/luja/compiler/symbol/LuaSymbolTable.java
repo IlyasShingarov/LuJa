@@ -40,6 +40,12 @@ public class LuaSymbolTable {
         }
     }
 
+    public void declareLocal(String name, boolean isTable) {
+        if (!localScopes.isEmpty()) {
+            localScopes.peek().declare(new LuaVariable(name, currentLocalIndex++, LuaSymbolMetatype.LOCAL, isTable));
+        }
+    }
+
 //    public void declareFunctionScope(String name) {
 //        var scope = localScopes.peek();
 //        functionScopes.put(name, scope);

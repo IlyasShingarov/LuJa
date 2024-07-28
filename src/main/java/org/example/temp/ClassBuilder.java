@@ -174,6 +174,7 @@ public class ClassBuilder implements Opcodes {
             }
             case TableAccessExpression expr -> {
                 loadExpressionOntoStack(expr.table(), instructions);
+                instructions.add(new TypeInsnNode(CHECKCAST, "java/util/HashMap"));
                 int depth = 0;
                 for (Expression key : expr.key()) {
                     switch (key) {
@@ -181,7 +182,14 @@ public class ClassBuilder implements Opcodes {
                                 new StringExpression(constexpr.value().toString()),
                                 instructions
                         );
-                        case VariableExpression varexpr -> loadExpressionOntoStack(varexpr, instructions);
+                        case BinaryExpression binaryexpr -> {
+                            loadExpressionOntoStack(binaryexpr, instructions);
+                            instructions.add(new MethodInsnNode(INVOKEVIRTUAL, "java/lang/Object", "toString", "()Ljava/lang/String;", false));
+                        }
+                        case VariableExpression varexpr -> {
+                            loadExpressionOntoStack(varexpr, instructions);
+                            instructions.add(new MethodInsnNode(INVOKEVIRTUAL, "java/lang/Object", "toString", "()Ljava/lang/String;", false));
+                        }
                         default -> throw new IllegalStateException("Unexpected value: " + expr.key());
                     }
                     instructions.add(new MethodInsnNode(INVOKEVIRTUAL, "java/util/HashMap", "get", "(Ljava/lang/Object;)Ljava/lang/Object;", false));

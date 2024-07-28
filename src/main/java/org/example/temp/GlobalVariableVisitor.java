@@ -34,7 +34,13 @@ public class GlobalVariableVisitor extends LuaParserBaseVisitor<List<StaticField
         if (ctx.LOCAL() != null) return null;
         log.info("Probable global variables - {}", ctx.getText());
         List<String> names = ctx.varlist().var().stream()
-                .map(LuaParser.VarContext::NAME)
+                .map(varContext -> {
+                    if (varContext.NAME() != null) {
+                        return varContext.NAME();
+                    } else {
+                        return varContext.prefixexp().NAME(0);
+                    }
+                })
                 .map(ParseTree::getText)
                 .filter(name -> contextManager.getCurrentScope().isGlobal(name))
                 .toList();
