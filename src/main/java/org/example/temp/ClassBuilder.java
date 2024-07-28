@@ -2,6 +2,7 @@ package org.example.temp;
 
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import org.example.builtin.FunctionUtil;
 import org.example.domain.expression.*;
 import org.example.domain.expression.constant.*;
 import org.example.domain.statement.StaticField;
@@ -109,6 +110,7 @@ public class ClassBuilder implements Opcodes {
 
     public void loadExpressionOntoStack(Expression expression, InsnList instructions) {
         switch (expression) {
+            case NilExpression ignored -> instructions.add(new InsnNode(ACONST_NULL));
             case IntegerExpression expr -> {
                 instructions.add(new TypeInsnNode(NEW, "java/lang/Integer"));
                 instructions.add(new InsnNode(DUP));
@@ -159,15 +161,23 @@ public class ClassBuilder implements Opcodes {
                 String functionDescriptor = "(%s)%s".formatted(
                         String.join("", expr.arguments().stream().map(p -> "Ljava/lang/Object;").toList()),
                         "Ljava/lang/Object;");
+
+                InsnList functionCode;
+                try {
+                    functionCode = FunctionUtil.getFunction(expr.name()).get();
+                } catch (Exception e) {
+                    functionCode = new InsnList() {{
+                        add(new MethodInsnNode(INVOKESTATIC,
+                                classNode.name, expr.name(), functionDescriptor, false)
+                        );
+                    }};
+                }
                 for (Expression arg : expr.arguments()) {
                     loadExpressionOntoStack(arg, instructions);
                 }
-                // invokestatic
-                instructions.add(new MethodInsnNode(INVOKESTATIC,
-                        classNode.name, expr.name(), functionDescriptor, false)
-                );
+                instructions.add(functionCode);
             }
-            case TableExpression expr -> {
+            case TableExpression ignored -> {
                 instructions.add(new TypeInsnNode(NEW, "java/util/HashMap"));
                 instructions.add(new InsnNode(DUP));
                 instructions.add(new MethodInsnNode(INVOKESPECIAL, "java/util/HashMap", "<init>", "()V", false));

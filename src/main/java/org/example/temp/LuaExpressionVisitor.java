@@ -10,6 +10,7 @@ import org.example.luja.compiler.symbol.ContextManager;
 import org.example.luja.compiler.symbol.MainContextManager;
 import org.example.luja.compiler.symbol.LuaVariable;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
@@ -81,9 +82,12 @@ public class LuaExpressionVisitor extends LuaParserBaseVisitor<Expression> {
 
     @Override
     public Expression visitFunctioncall(LuaParser.FunctioncallContext ctx) {
-        List<Expression> arguments = ctx.args().explist().exp().stream()
-                .map(this::visit)
-                .toList();
+        List<Expression> arguments = new ArrayList<>();
+        if (ctx.args().explist() != null) {
+            arguments.addAll(ctx.args().explist().exp().stream()
+                    .map(this::visit)
+                    .toList());
+        }
 
         String functionName = ctx.NAME(0).getText();
         return new FunctionExpression(functionName, arguments);

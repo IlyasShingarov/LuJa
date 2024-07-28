@@ -5,12 +5,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.example.antlr.LuaParser;
 import org.example.antlr.LuaParserBaseVisitor;
 import org.example.builtin.FunctionUtil;
-import org.example.domain.Condition;
+import org.example.domain.statement.Condition;
 import org.example.domain.expression.*;
 import org.example.domain.expression.constant.IntegerExpression;
 import org.example.domain.expression.constant.StringExpression;
 import org.example.luja.compiler.symbol.ContextManager;
-import org.example.luja.compiler.symbol.MainContextManager;
 import org.example.luja.compiler.symbol.LuaVariable;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
@@ -265,11 +264,10 @@ public class StatementVisitor extends LuaParserBaseVisitor<InsnList> implements 
             isTableAccess = ctx.varlist().var(0).prefixexp() != null
                     && ctx.varlist().var(0).prefixexp().OB() != null;
 
-        if (/*variable.isTable() ||*/ isTableAccess) {
+        if (isTableAccess) {
             instructions.add(new VarInsnNode(ALOAD, variable.index()));
             instructions.add(new TypeInsnNode(CHECKCAST, "java/util/HashMap"));
             log.info("Table access detected {}", ctx.getText());
-//            String fieldName = ctx.varlist().var(0).exp().getText();
             Expression fieldExpression = new LuaExpressionVisitor(contextManager).visit(ctx.varlist().var(0).exp());
             codeGen.getClassBuilder().loadExpressionOntoStack(fieldExpression, instructions);
             instructions.add(new MethodInsnNode(INVOKEVIRTUAL, "java/lang/Object", "toString", "()Ljava/lang/String;"));
@@ -279,6 +277,7 @@ public class StatementVisitor extends LuaParserBaseVisitor<InsnList> implements 
             instructions.add(new InsnNode(POP));
         } else {
             Expression expression = new LuaExpressionVisitor(contextManager).visit(ctx.explist().exp(0));
+            log.info("Variable {} = {}", variable.name(), expression);
             switch (variable.metaType()) {
                 case GLOBAL -> {
                     if (expression.hasVariableExpression()) {
