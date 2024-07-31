@@ -22,8 +22,8 @@ import java.util.List;
 public class FunctionVisitor extends LuaParserBaseVisitor<List<MethodNode>> implements Opcodes {
     private final List<MethodNode> methodNodes = new ArrayList<>();
     private final ContextManagerFactory contextManagerFactory;
-    private ContextManager contextManager;
     private final CodeGen gen;
+    private ContextManager contextManager;
 
     @Override
     public List<MethodNode> visitChunk(LuaParser.ChunkContext ctx) {
@@ -45,9 +45,9 @@ public class FunctionVisitor extends LuaParserBaseVisitor<List<MethodNode>> impl
         LuaParser.ParlistContext parlist = ctx.funcbody().parlist();
         List<String> parameters = new ArrayList<>();
         if (parlist != null && parlist.namelist() != null) {
-             parameters = parlist.namelist().NAME().stream()
-                .map(ParseTree::getText)
-                .toList();
+            parameters = parlist.namelist().NAME().stream()
+                    .map(ParseTree::getText)
+                    .toList();
         }
 
         String functionDescriptor = "(%s)%s".formatted(

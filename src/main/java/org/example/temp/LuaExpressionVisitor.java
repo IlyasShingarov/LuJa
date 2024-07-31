@@ -7,11 +7,9 @@ import org.example.antlr.LuaParserBaseVisitor;
 import org.example.domain.expression.*;
 import org.example.domain.expression.constant.*;
 import org.example.luja.compiler.symbol.ContextManager;
-import org.example.luja.compiler.symbol.MainContextManager;
 import org.example.luja.compiler.symbol.LuaVariable;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 
 @Slf4j
@@ -102,6 +100,12 @@ public class LuaExpressionVisitor extends LuaParserBaseVisitor<Expression> {
         log.info("Table constructor fields: {}", fields);
 
         return new TableExpression(fields, 0);
+    }
+
+    @Override
+    public Expression visitUnop(LuaParser.UnopContext ctx) {
+        log.error("UNOPUNOPUNOPUNOPUNOPUNOPUNOPUNOPUNOPUNOP");
+        return super.visitUnop(ctx);
     }
 
     private class FieldVisitor extends LuaParserBaseVisitor<FieldExpression> {

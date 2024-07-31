@@ -4,7 +4,6 @@ import org.objectweb.asm.Type;
 
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public record TableExpression(
         List<FieldExpression> fields,

@@ -9,7 +9,7 @@ import java.util.Stack;
 @Getter
 public class MainContextManager implements ContextManager {
     private LuaSymbolTable luaSymbolTable;
-    private Stack<LuaScope> currentScopeStack = new Stack<>();
+    private final Stack<LuaScope> currentScopeStack = new Stack<>();
     private int currentScopeDepth = 1;
     private int currentLocalIndex;
 

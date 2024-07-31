@@ -10,7 +10,10 @@ import org.example.luja.compiler.symbol.LuaSymbolMetatype;
 import org.example.luja.compiler.symbol.LuaSymbolTable;
 import org.example.luja.compiler.symbol.LuaVariable;
 
-import java.util.*;
+import java.util.ArrayDeque;
+import java.util.Deque;
+import java.util.HashMap;
+import java.util.Map;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -39,7 +42,7 @@ public class FunctionScopeVisitor extends LuaParserBaseVisitor<Map<String, Deque
         private int scopeDepth = 0;
         private int localVarIndex = 0;
 
-        private Deque<LuaScope> scopes = new ArrayDeque<>();
+        private final Deque<LuaScope> scopes = new ArrayDeque<>();
 
         @Override
         public Deque<LuaScope> visitFuncdecl(LuaParser.FuncdeclContext ctx) {
@@ -162,9 +165,9 @@ public class FunctionScopeVisitor extends LuaParserBaseVisitor<Map<String, Deque
 
         private void declareLocal(String name) {
             scopes.peekLast().declare(
-                            new LuaVariable(
-                                    name, localVarIndex++, LuaSymbolMetatype.LOCAL, false
-                            ));
+                    new LuaVariable(
+                            name, localVarIndex++, LuaSymbolMetatype.LOCAL, false
+                    ));
         }
     }
 }

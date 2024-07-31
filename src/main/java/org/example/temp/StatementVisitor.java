@@ -5,10 +5,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.example.antlr.LuaParser;
 import org.example.antlr.LuaParserBaseVisitor;
 import org.example.builtin.FunctionUtil;
-import org.example.domain.statement.Condition;
 import org.example.domain.expression.*;
 import org.example.domain.expression.constant.IntegerExpression;
 import org.example.domain.expression.constant.StringExpression;
+import org.example.domain.statement.Condition;
 import org.example.luja.compiler.symbol.ContextManager;
 import org.example.luja.compiler.symbol.LuaVariable;
 import org.objectweb.asm.Opcodes;
@@ -130,7 +130,7 @@ public class StatementVisitor extends LuaParserBaseVisitor<InsnList> implements 
         Expression endExpression = new LuaExpressionVisitor(contextManager).visit(ctx.exp(1));
         Expression stepExpression = ctx.exp().size() > 2
                 ? new LuaExpressionVisitor(contextManager).visit(ctx.exp(2))
-                : new IntegerExpression( 1);
+                : new IntegerExpression(1);
 
 
         LuaVariable counterVar = contextManager.getCurrentScope().getVariable(counterName);
@@ -254,8 +254,8 @@ public class StatementVisitor extends LuaParserBaseVisitor<InsnList> implements 
             variable = contextManager.getCurrentScope().getVariable(varName);
         } else {
             String varName = ctx.varlist().var(0).NAME() != null
-                ? ctx.varlist().var(0).NAME().getText()
-                : ctx.varlist().var(0).prefixexp().NAME(0).getText();
+                    ? ctx.varlist().var(0).NAME().getText()
+                    : ctx.varlist().var(0).prefixexp().NAME(0).getText();
             variable = contextManager.getCurrentScope().getVariable(varName);
         }
 
@@ -349,8 +349,8 @@ public class StatementVisitor extends LuaParserBaseVisitor<InsnList> implements 
                 .filter(m -> m.name.equals(ctx.funcname().getText()))
                 .findFirst()
                 .ifPresentOrElse(
-                    methodNode -> log.info("Method {} already exists", ctx.funcname().getText()),
-                    () -> log.info("Method {} does not exist", ctx.funcname().getText())
+                        methodNode -> log.info("Method {} already exists", ctx.funcname().getText()),
+                        () -> log.info("Method {} does not exist", ctx.funcname().getText())
                 );
         return new InsnList();
     }

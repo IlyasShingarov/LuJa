@@ -7,23 +7,6 @@ import static java.lang.invoke.MethodHandles.*;
 import static java.lang.invoke.MethodType.methodType;
 
 public class OperatorSupport {
-    private OperatorSupport() {
-        throw new UnsupportedOperationException("Don't instantiate invokedynamic bootstrap class");
-    }
-
-    static class MonomorphicInlineCache extends MutableCallSite {
-
-        final MethodHandles.Lookup callerLookup;
-        final String name;
-        MethodHandle fallback;
-
-        MonomorphicInlineCache(MethodHandles.Lookup callerLookup, String name, MethodType type) {
-            super(type);
-            this.callerLookup = callerLookup;
-            this.name = name;
-        }
-    }
-
     private static final MethodHandle GUARD_2;
     private static final MethodHandle FALLBACK_2;
 
@@ -46,6 +29,9 @@ public class OperatorSupport {
             throw new Error("Could not bootstrap the required method handles", e);
         }
     }
+    private OperatorSupport() {
+        throw new UnsupportedOperationException("Don't instantiate invokedynamic bootstrap class");
+    }
 
     public static boolean guard_2(Class<?> expected1, Class<?> expected2, Object arg1, Object arg2) {
         Class<?> t1 = (arg1 == null) ? Object.class : arg1.getClass();
@@ -65,7 +51,7 @@ public class OperatorSupport {
         } catch (Throwable t1) {
             try {
 
-                
+
                 target = inlineCache.callerLookup.findStatic(
                         OperatorSupport.class, inlineCache.name + "_fallback", methodType(Object.class, Object.class, Object.class));
             } catch (Throwable t2) {
@@ -103,9 +89,15 @@ public class OperatorSupport {
         return callSite;
     }
 
-// ARITHMETIC =========================================================================================================
-    public static Object add(Integer a, Integer b) { return a + b; }
-    public static Object add(Double a, Double b) { return a + b; }
+    // ARITHMETIC =========================================================================================================
+    public static Object add(Integer a, Integer b) {
+        return a + b;
+    }
+
+    public static Object add(Double a, Double b) {
+        return a + b;
+    }
+
     public static Object add(String a, String b) {
         try {
             return Integer.parseInt(a) + Integer.parseInt(b);
@@ -117,8 +109,15 @@ public class OperatorSupport {
             }
         }
     }
-    public static Object add(Integer a, Double b) { return a + b; }
-    public static Object add(Double a, Integer b) { return a + b; }
+
+    public static Object add(Integer a, Double b) {
+        return a + b;
+    }
+
+    public static Object add(Double a, Integer b) {
+        return a + b;
+    }
+
     public static Object add(String a, Integer b) {
         try {
             return Integer.parseInt(a) + b;
@@ -130,6 +129,7 @@ public class OperatorSupport {
             }
         }
     }
+
     public static Object add(Integer a, String b) {
         try {
             return a + Integer.parseInt(b);
@@ -141,6 +141,7 @@ public class OperatorSupport {
             }
         }
     }
+
     public static Object add(Double a, String b) {
         try {
             return a + Integer.parseInt(b);
@@ -152,6 +153,7 @@ public class OperatorSupport {
             }
         }
     }
+
     public static Object add(String a, Double b) {
         try {
             return Integer.parseInt(a) + b;
@@ -164,10 +166,22 @@ public class OperatorSupport {
         }
     }
 
-    public static Object subtract(Integer a, Integer b) { return a - b; }
-    public static Object subtract(Double a, Double b) { return a - b; }
-    public static Object subtract(Integer a, Double b) { return a - b; }
-    public static Object subtract(Double a, Integer b) { return a - b; }
+    public static Object subtract(Integer a, Integer b) {
+        return a - b;
+    }
+
+    public static Object subtract(Double a, Double b) {
+        return a - b;
+    }
+
+    public static Object subtract(Integer a, Double b) {
+        return a - b;
+    }
+
+    public static Object subtract(Double a, Integer b) {
+        return a - b;
+    }
+
     public static Object subtract(String a, String b) {
         try {
             return Integer.parseInt(a) - Integer.parseInt(b);
@@ -179,6 +193,7 @@ public class OperatorSupport {
             }
         }
     }
+
     public static Object subtract(String a, Integer b) {
         try {
             return Integer.parseInt(a) - b;
@@ -190,6 +205,7 @@ public class OperatorSupport {
             }
         }
     }
+
     public static Object subtract(Integer a, String b) {
         try {
             return a - Integer.parseInt(b);
@@ -201,6 +217,7 @@ public class OperatorSupport {
             }
         }
     }
+
     public static Object subtract(Double a, String b) {
         try {
             return a - Integer.parseInt(b);
@@ -212,6 +229,7 @@ public class OperatorSupport {
             }
         }
     }
+
     public static Object subtract(String a, Double b) {
         try {
             return Integer.parseInt(a) - b;
@@ -224,10 +242,22 @@ public class OperatorSupport {
         }
     }
 
-    public static Object multiply(Integer a, Integer b) { return a * b; }
-    public static Object multiply(Double a, Double b) { return a * b; }
-    public static Object multiply(Integer a, Double b) { return a * b; }
-    public static Object multiply(Double a, Integer b) { return a * b; }
+    public static Object multiply(Integer a, Integer b) {
+        return a * b;
+    }
+
+    public static Object multiply(Double a, Double b) {
+        return a * b;
+    }
+
+    public static Object multiply(Integer a, Double b) {
+        return a * b;
+    }
+
+    public static Object multiply(Double a, Integer b) {
+        return a * b;
+    }
+
     public static Object multiply(String a, String b) {
         try {
             return Integer.parseInt(a) * Integer.parseInt(b);
@@ -239,6 +269,7 @@ public class OperatorSupport {
             }
         }
     }
+
     public static Object multiply(String a, Integer b) {
         try {
             return Integer.parseInt(a) * b;
@@ -250,6 +281,7 @@ public class OperatorSupport {
             }
         }
     }
+
     public static Object multiply(Integer a, String b) {
         try {
             return a * Integer.parseInt(b);
@@ -261,6 +293,7 @@ public class OperatorSupport {
             }
         }
     }
+
     public static Object multiply(Double a, String b) {
         try {
             return a * Integer.parseInt(b);
@@ -272,6 +305,7 @@ public class OperatorSupport {
             }
         }
     }
+
     public static Object multiply(String a, Double b) {
         try {
             return Integer.parseInt(a) * b;
@@ -284,10 +318,22 @@ public class OperatorSupport {
         }
     }
 
-    public static Object divide(Integer a, Integer b) { return a.doubleValue() / b.doubleValue(); }
-    public static Object divide(Double a, Double b) { return a / b; }
-    public static Object divide(Integer a, Double b) { return a.doubleValue() / b; }
-    public static Object divide(Double a, Integer b) { return a / b.doubleValue(); }
+    public static Object divide(Integer a, Integer b) {
+        return a.doubleValue() / b.doubleValue();
+    }
+
+    public static Object divide(Double a, Double b) {
+        return a / b;
+    }
+
+    public static Object divide(Integer a, Double b) {
+        return a.doubleValue() / b;
+    }
+
+    public static Object divide(Double a, Integer b) {
+        return a / b.doubleValue();
+    }
+
     public static Object divide(String a, String b) {
         try {
             return Integer.parseInt(a) / Integer.parseInt(b);
@@ -299,6 +345,7 @@ public class OperatorSupport {
             }
         }
     }
+
     public static Object divide(String a, Integer b) {
         try {
             return Integer.parseInt(a) / b;
@@ -310,6 +357,7 @@ public class OperatorSupport {
             }
         }
     }
+
     public static Object divide(Integer a, String b) {
         try {
             return a / Integer.parseInt(b);
@@ -321,6 +369,7 @@ public class OperatorSupport {
             }
         }
     }
+
     public static Object divide(Double a, String b) {
         try {
             return a / Integer.parseInt(b);
@@ -332,6 +381,7 @@ public class OperatorSupport {
             }
         }
     }
+
     public static Object divide(String a, Double b) {
         try {
             return Integer.parseInt(a) / b;
@@ -344,10 +394,22 @@ public class OperatorSupport {
         }
     }
 
-    public static Object divide_floor(Integer a, Integer b) { return a / b; }
-    public static Object divide_floor(Double a, Double b) { return (int) (a / b); }
-    public static Object divide_floor(Integer a, Double b) { return (int) (a / b); }
-    public static Object divide_floor(Double a, Integer b) { return (int) (a / b); }
+    public static Object divide_floor(Integer a, Integer b) {
+        return a / b;
+    }
+
+    public static Object divide_floor(Double a, Double b) {
+        return (int) (a / b);
+    }
+
+    public static Object divide_floor(Integer a, Double b) {
+        return (int) (a / b);
+    }
+
+    public static Object divide_floor(Double a, Integer b) {
+        return (int) (a / b);
+    }
+
     public static Object divide_floor(String a, String b) {
         try {
             return Integer.parseInt(a) / Integer.parseInt(b);
@@ -359,6 +421,7 @@ public class OperatorSupport {
             }
         }
     }
+
     public static Object divide_floor(String a, Integer b) {
         try {
             return Integer.parseInt(a) / b;
@@ -370,6 +433,7 @@ public class OperatorSupport {
             }
         }
     }
+
     public static Object divide_floor(Integer a, String b) {
         try {
             return a / Integer.parseInt(b);
@@ -381,6 +445,7 @@ public class OperatorSupport {
             }
         }
     }
+
     public static Object divide_floor(Double a, String b) {
         try {
             return (int) (a / Integer.parseInt(b));
@@ -392,6 +457,7 @@ public class OperatorSupport {
             }
         }
     }
+
     public static Object divide_floor(String a, Double b) {
         try {
             return Integer.parseInt(a) / b;
@@ -404,10 +470,22 @@ public class OperatorSupport {
         }
     }
 
-    public static Object modulo(Integer a, Integer b) { return a % b; }
-    public static Object modulo(Double a, Double b) { return a % b; }
-    public static Object modulo(Integer a, Double b) { return a % b; }
-    public static Object modulo(Double a, Integer b) { return a % b; }
+    public static Object modulo(Integer a, Integer b) {
+        return a % b;
+    }
+
+    public static Object modulo(Double a, Double b) {
+        return a % b;
+    }
+
+    public static Object modulo(Integer a, Double b) {
+        return a % b;
+    }
+
+    public static Object modulo(Double a, Integer b) {
+        return a % b;
+    }
+
     public static Object modulo(String a, String b) {
         try {
             return Integer.parseInt(a) % Integer.parseInt(b);
@@ -419,6 +497,7 @@ public class OperatorSupport {
             }
         }
     }
+
     public static Object modulo(String a, Integer b) {
         try {
             return Integer.parseInt(a) % b;
@@ -430,6 +509,7 @@ public class OperatorSupport {
             }
         }
     }
+
     public static Object modulo(Integer a, String b) {
         try {
             return a % Integer.parseInt(b);
@@ -441,6 +521,7 @@ public class OperatorSupport {
             }
         }
     }
+
     public static Object modulo(Double a, String b) {
         try {
             return a % Integer.parseInt(b);
@@ -452,6 +533,7 @@ public class OperatorSupport {
             }
         }
     }
+
     public static Object modulo(String a, Double b) {
         try {
             return Integer.parseInt(a) % b;
@@ -464,70 +546,167 @@ public class OperatorSupport {
         }
     }
 
-// RELATION ============================================================================================================
-    public static Object equals(Integer a, Integer b) { return a.equals(b); }
-    public static Object equals(Double a, Double b) { return a.equals(b); }
-    public static Object equals(String a, String b) { return a.equals(b); }
-    public static Object equals(Integer a, Double b) { return false; }
-    public static Object equals(Double a, Integer b) { return false; }
-    public static Object equals(String a, Integer b) { return false; }
-    public static Object equals(Integer a, String b) { return false; }
-    public static Object equals(Double a, String b) { return false; }
-    public static Object equals(String a, Double b) { return false; }
+    // RELATION ============================================================================================================
+    public static Object equals(Integer a, Integer b) {
+        return a.equals(b);
+    }
 
-    public static Object not_equals(Integer a, Integer b) { return !a.equals(b); }
-    public static Object not_equals(Double a, Double b) { return !a.equals(b); }
-    public static Object not_equals(String a, String b) { return !a.equals(b); }
-    public static Object not_equals(Integer a, Double b) { return true; }
-    public static Object not_equals(Double a, Integer b) { return true; }
-    public static Object not_equals(String a, Integer b) { return true; }
-    public static Object not_equals(Integer a, String b) { return true; }
-    public static Object not_equals(Double a, String b) { return true; }
-    public static Object not_equals(String a, Double b) { return true; }
+    public static Object equals(Double a, Double b) {
+        return a.equals(b);
+    }
 
-    public static Object less_than(Integer a, Integer b) { return a < b; }
-    public static Object less_than(Double a, Double b) { return a < b; }
+    public static Object equals(String a, String b) {
+        return a.equals(b);
+    }
+
+    public static Object equals(Integer a, Double b) {
+        return false;
+    }
+
+    public static Object equals(Double a, Integer b) {
+        return false;
+    }
+
+    public static Object equals(String a, Integer b) {
+        return false;
+    }
+
+    public static Object equals(Integer a, String b) {
+        return false;
+    }
+
+    public static Object equals(Double a, String b) {
+        return false;
+    }
+
+    public static Object equals(String a, Double b) {
+        return false;
+    }
+
+    public static Object not_equals(Integer a, Integer b) {
+        return !a.equals(b);
+    }
+
+    public static Object not_equals(Double a, Double b) {
+        return !a.equals(b);
+    }
+
+    public static Object not_equals(String a, String b) {
+        return !a.equals(b);
+    }
+
+    public static Object not_equals(Integer a, Double b) {
+        return true;
+    }
+
+    public static Object not_equals(Double a, Integer b) {
+        return true;
+    }
+
+    public static Object not_equals(String a, Integer b) {
+        return true;
+    }
+
+    public static Object not_equals(Integer a, String b) {
+        return true;
+    }
+
+    public static Object not_equals(Double a, String b) {
+        return true;
+    }
+
+    public static Object not_equals(String a, Double b) {
+        return true;
+    }
+
+    public static Object less_than(Integer a, Integer b) {
+        return a < b;
+    }
+
+    public static Object less_than(Double a, Double b) {
+        return a < b;
+    }
+
     public static Object less_than(String a, String b) {
         return a.compareTo(b) < 0;
     }
-    public static Object less_than(Integer a, Double b) { return a < b; }
-    public static Object less_than(Double a, Integer b) { return a < b; }
 
-    public static Object less_than_or_equals(Integer a, Integer b) { return a <= b; }
-    public static Object less_than_or_equals(Double a, Double b) { return a <= b; }
+    public static Object less_than(Integer a, Double b) {
+        return a < b;
+    }
+
+    public static Object less_than(Double a, Integer b) {
+        return a < b;
+    }
+
+    public static Object less_than_or_equals(Integer a, Integer b) {
+        return a <= b;
+    }
+
+    public static Object less_than_or_equals(Double a, Double b) {
+        return a <= b;
+    }
+
     public static Object less_than_or_equals(String a, String b) {
         return a.compareTo(b) <= 0;
     }
-    public static Object less_than_or_equals(Integer a, Double b) { return a <= b; }
-    public static Object less_than_or_equals(Double a, Integer b) { return a <= b; }
 
-    public static Object greater_than(Integer a, Integer b) { return a > b; }
-    public static Object greater_than(Double a, Double b) { return a > b; }
+    public static Object less_than_or_equals(Integer a, Double b) {
+        return a <= b;
+    }
+
+    public static Object less_than_or_equals(Double a, Integer b) {
+        return a <= b;
+    }
+
+    public static Object greater_than(Integer a, Integer b) {
+        return a > b;
+    }
+
+    public static Object greater_than(Double a, Double b) {
+        return a > b;
+    }
+
     public static Object greater_than(String a, String b) {
         return a.compareTo(b) > 0;
     }
-    public static Object greater_than(Integer a, Double b) { return a > b; }
-    public static Object greater_than(Double a, Integer b) { return a > b; }
 
-    public static Object greater_than_or_equals(Integer a, Integer b) { return a >= b; }
-    public static Object greater_than_or_equals(Double a, Double b) { return a >= b; }
+    public static Object greater_than(Integer a, Double b) {
+        return a > b;
+    }
+
+    public static Object greater_than(Double a, Integer b) {
+        return a > b;
+    }
+
+    public static Object greater_than_or_equals(Integer a, Integer b) {
+        return a >= b;
+    }
+
+    public static Object greater_than_or_equals(Double a, Double b) {
+        return a >= b;
+    }
+
     public static Object greater_than_or_equals(String a, String b) {
         return a.compareTo(b) >= 0;
     }
-    public static Object greater_than_or_equals(Integer a, Double b) { return a >= b; }
-    public static Object greater_than_or_equals(Double a, Integer b) { return a >= b; }
 
+    public static Object greater_than_or_equals(Integer a, Double b) {
+        return a >= b;
+    }
 
-
-
-
+    public static Object greater_than_or_equals(Double a, Integer b) {
+        return a >= b;
+    }
 
     public static Object add_fallback(Object a, Object b) {
         return reject(a, b, "+");
     }
+
     public static Object equals_fallback(Object a, Object b) {
         return Objects.equals(a, b);
     }
+
     public static Object not_equals_fallback(Object a, Object b) {
         return !Objects.equals(a, b);
     }
@@ -550,5 +729,18 @@ public class OperatorSupport {
         throw new IllegalArgumentException(
                 String.format("Unsupported operand types for %s: %s and %s", symbol, a.getClass().getSimpleName(), b.getClass().getSimpleName())
         );
+    }
+
+    static class MonomorphicInlineCache extends MutableCallSite {
+
+        final MethodHandles.Lookup callerLookup;
+        final String name;
+        MethodHandle fallback;
+
+        MonomorphicInlineCache(MethodHandles.Lookup callerLookup, String name, MethodType type) {
+            super(type);
+            this.callerLookup = callerLookup;
+            this.name = name;
+        }
     }
 }

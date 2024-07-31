@@ -67,7 +67,7 @@ public class GlobalVariableVisitor extends LuaParserBaseVisitor<List<StaticField
             );
         }
 
-        for (StaticField sf: fields) {
+        for (StaticField sf : fields) {
             log.info("Field: {}", sf);
         }
 

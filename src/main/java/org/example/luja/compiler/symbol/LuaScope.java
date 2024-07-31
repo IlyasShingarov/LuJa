@@ -4,8 +4,6 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
-import org.example.symbol.FunctionSymbol;
-import org.example.symbol.VariableSymbol;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -17,7 +15,7 @@ import java.util.Map;
 public class LuaScope {
 
     private final Map<String, LuaVariable> variables = new HashMap<>();
-    private int scopeDepth;
+    private final int scopeDepth;
 
     public LuaScope(int depth) {
         this.scopeDepth = depth;

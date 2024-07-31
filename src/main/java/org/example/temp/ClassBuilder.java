@@ -12,29 +12,19 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.*;
 
-import java.lang.invoke.*;
+import java.lang.invoke.MethodType;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 
 @Slf4j
 @Getter
 public class ClassBuilder implements Opcodes {
 
+    private static final Handle OPERATOR_HANDLE = makeHandle("OperatorSupport", Type.INT_TYPE.getDescriptor());
     private final ClassNode classNode;
     private final List<MethodNode> methodNodes;
     private final List<FieldNode> fieldNodes;
     private final List<StaticField> staticFields;
-
-    private static final Handle OPERATOR_HANDLE = makeHandle("OperatorSupport", Type.INT_TYPE.getDescriptor());
-
-    private static Handle makeHandle(String methodName, String description) {
-        return new Handle(H_INVOKESTATIC,
-                "org/example/luja/runtime/" + methodName,
-                "bootstrap",
-                "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;"
-                        + description + ")Ljava/lang/invoke/CallSite;", false);
-    }
 
     public ClassBuilder(String className, String superClassName) {
         this.classNode = new ClassNode();
@@ -48,12 +38,20 @@ public class ClassBuilder implements Opcodes {
         this.staticFields = new ArrayList<>();
     }
 
+    private static Handle makeHandle(String methodName, String description) {
+        return new Handle(H_INVOKESTATIC,
+                "org/example/luja/runtime/" + methodName,
+                "bootstrap",
+                "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;"
+                        + description + ")Ljava/lang/invoke/CallSite;", false);
+    }
+
     public InsnList makeInvokeDynamic(String name) {
         InsnList instructions = new InsnList();
         instructions.add(new InvokeDynamicInsnNode(
-                name,
-                MethodType.genericMethodType(2).toMethodDescriptorString(),
-                OPERATOR_HANDLE, (Integer) 2
+                        name,
+                        MethodType.genericMethodType(2).toMethodDescriptorString(),
+                        OPERATOR_HANDLE, 2
                 )
         );
         return instructions;
@@ -151,9 +149,9 @@ public class ClassBuilder implements Opcodes {
                 loadExpressionOntoStack(expr.right(), instructions);
                 String name = expr.operation().name().toLowerCase();
                 instructions.add(new InvokeDynamicInsnNode(
-                        name,
-                        MethodType.genericMethodType(2).toMethodDescriptorString(),
-                        OPERATOR_HANDLE, (Integer) 2
+                                name,
+                                MethodType.genericMethodType(2).toMethodDescriptorString(),
+                                OPERATOR_HANDLE, 2
                         )
                 );
             }

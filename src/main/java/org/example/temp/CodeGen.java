@@ -2,7 +2,6 @@ package org.example.temp;
 
 import lombok.Getter;
 import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.tree.*;
 
 @Getter
 public class CodeGen implements Opcodes {

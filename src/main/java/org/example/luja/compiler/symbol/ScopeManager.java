@@ -1,7 +1,5 @@
 package org.example.luja.compiler.symbol;
 
-import org.example.symbol.VariableSymbol;
-
 import java.util.List;
 
 public record ScopeManager(
@@ -18,9 +16,6 @@ public record ScopeManager(
         return globalScope.getVariable(name);
     }
 
-    public void addVariable(VariableSymbol variableSymbol) {
-//        localScopes.get(localScopes.size() - 1).declare();
-    }
 
     public boolean isGlobal(String name) {
         return globalScope.isDeclared(name);

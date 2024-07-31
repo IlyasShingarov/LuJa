@@ -2,7 +2,10 @@ package org.example.builtin;
 
 import lombok.extern.slf4j.Slf4j;
 import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.tree.*;
+import org.objectweb.asm.tree.FieldInsnNode;
+import org.objectweb.asm.tree.InsnList;
+import org.objectweb.asm.tree.InsnNode;
+import org.objectweb.asm.tree.MethodInsnNode;
 
 import java.util.Map;
 import java.util.function.Supplier;

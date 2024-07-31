@@ -9,7 +9,10 @@ import org.example.domain.statement.StaticField;
 import org.example.luja.compiler.parser.FunctionScopeVisitor;
 import org.example.luja.compiler.parser.FunctionVisitor;
 import org.example.luja.compiler.parser.SymbolVisitor;
-import org.example.luja.compiler.symbol.*;
+import org.example.luja.compiler.symbol.ContextManagerFactory;
+import org.example.luja.compiler.symbol.LuaScope;
+import org.example.luja.compiler.symbol.LuaSymbolTable;
+import org.example.luja.compiler.symbol.MainContextManager;
 import org.objectweb.asm.tree.InsnList;
 import org.objectweb.asm.tree.MethodNode;
 
